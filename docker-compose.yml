@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  autosoc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: autosoc-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - AUTOSOC_DEMO_MODE=true
+      - AWS_REGION=ap-south-1
+      - APP_BASE_URL=http://localhost:3000
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
