@@ -58,7 +58,7 @@ git clone https://github.com/Santa-24/AutoSOC.git
 cd AutoSOC
 
 # Initialize environment
-cp .env.template .env
+cp .env.example .env
 sed -i 's/AUTOSOC_DEMO_MODE=true/AUTOSOC_DEMO_MODE=false/g' .env
 sed -i 's/AUTOSOC_ENABLE_CLOUDTRAIL=false/AUTOSOC_ENABLE_CLOUDTRAIL=true/g' .env
 
@@ -86,7 +86,7 @@ If you already have a running EC2 instance:
 
 3. **Configure your `.env`:**
    ```bash
-   cp .env.template .env
+   cp .env.example .env
    nano .env
    ```
    *(If using an attached IAM role, leave `AWS_ACCESS_KEY_ID` blank; set `AUTOSOC_DEMO_MODE=false` and `AWS_REGION=ap-south-1`)*.

@@ -40,8 +40,8 @@ git clone <repository-url>
 cd AutoSOC
 npm install
 
-# 2. Copy environment template
-cp .env.template .env.local
+# 2. Copy environment example
+cp .env.example .env.local
 
 # 3. Launch development server
 npm run dev

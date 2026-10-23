@@ -33,8 +33,8 @@ fi
 
 # 2. Check for .env Configuration
 if [ ! -f .env ]; then
-    echo "[!] No .env file found. Initializing .env from .env.template..."
-    cp .env.template .env
+    echo "[!] No .env file found. Initializing .env from .env.example..."
+    cp .env.example .env
     echo "[*] AutoSOC will authenticate via EC2 IAM Instance Profile by default."
 fi
 

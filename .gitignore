@@ -28,7 +28,7 @@ yarn-error.log*
 .env.production.local
 .env.staging
 .env.production
-# Note: .env.example and .env.template are explicitly allowed
+# Note: .env.example is explicitly allowed
 
 # Operating System
 .DS_Store
@@ -38,8 +38,9 @@ yarn-error.log*
 *.id_ed25519
 Thumbs.db
 
-# Local Setup & User Credential Files
+# Local Setup & User Documentation / Credential Notes
 AWS_CREDENTIALS_SETUP*.txt
+AUTOSOC_OVERVIEW_AND_GUIDE*.txt
 
 # Build Cache
 tsconfig.tsbuildinfo
