@@ -17,11 +17,22 @@ import { DemoBanner } from "@/components/ui/demo-banner";
 import { Button } from "@/components/ui/button";
 
 export default function SettingsPage() {
-  const [demoMode, setDemoMode] = useState(true);
+  const [demoMode, setDemoMode] = useState(false);
   const [slackNotifications, setSlackNotifications] = useState(true);
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [sessionTimeout, setSessionTimeout] = useState("30");
   const [isSaved, setIsSaved] = useState(false);
+
+  React.useEffect(() => {
+    fetch("/api/health")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.demoModeActive !== undefined) {
+          setDemoMode(data.demoModeActive);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +42,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-charcoal-900 text-ivory-100 flex flex-col font-mono selection:bg-lime-500 selection:text-charcoal-950">
-      <DemoBanner isDemoMode={demoMode} awsConnected={false} />
+      <DemoBanner isDemoMode={demoMode} onToggleDemoMode={(val) => setDemoMode(val)} />
       <ConsoleNav user={null} />
 
       <div className="flex-1 flex overflow-hidden">

@@ -70,7 +70,7 @@ flowchart LR
 - **Validation:** Zod Schema Validation (`src/lib/env.ts`)
 - **AWS SDK:** `@aws-sdk/*` v3 (STS, Security Hub, GuardDuty, CloudTrail, Config, Inspector, Bedrock, EC2, IAM, S3, WAFv2)
 - **Testing:** Vitest + React Testing Library + JSDOM
-- **Infrastructure-as-Code:** Modular Terraform Starter (`terraform/`)
+- **Deployment & Packaging:** Docker, Docker Compose & Standalone Container on AWS EC2 (`deploy-ec2.sh`, `docker-compose.yml`)
 
 ---
 
@@ -125,6 +125,53 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `/integrations` | Server-Side Live AWS Status Verification | Real Health Checks |
 | `/audit-log` | Append-Only Audit Trail (CSV/JSON Export) | Tamper-Evident |
 | `/settings` | Demo Mode Toggle & Security Preferences | Configurable |
+
+---
+
+---
+
+## AWS EC2 Production Deployment
+
+AutoSOC is production-ready for deployment on **AWS EC2** (Amazon Linux 2023, Amazon Linux 2, or Ubuntu) using Docker & Docker Compose or as a standalone Next.js container.
+
+### Option A: Automated One-Command EC2 Deployment (Recommended)
+
+1. Launch an EC2 Instance (e.g., `t3.medium`, Amazon Linux 2023 or Ubuntu 22.04 LTS).
+2. Attach an IAM Role with read-only security permissions (`SecurityAudit` or custom `AutoSOC-EC2-Role`).
+3. SSH into the instance and run:
+
+```bash
+# Clone the repository
+git clone https://github.com/Santa-24/AutoSOC.git
+cd AutoSOC
+
+# Run automated EC2 setup & deploy
+chmod +x deploy-ec2.sh
+./deploy-ec2.sh
+```
+
+The script automatically:
+- Installs Docker, Docker Compose, Git, and curl
+- Starts and enables the Docker service
+- Adds the current user to the `docker` group
+- Configures environment files (`.env`)
+- Builds and starts the production container on port 80/3000
+- Performs an automated health check against `/api/health`
+
+### Option B: Manual Docker Compose Deployment
+
+```bash
+# Build and run in detached mode
+docker compose up -d --build
+
+# View logs
+docker compose logs -f
+
+# Verify service health
+curl -f http://localhost/api/health
+```
+
+For complete instructions on EC2 instance sizing, Security Group rules (ports 80, 443, 3000, 22), IAM Instance Profile policies, automated User Data scripts, and Nginx reverse proxy with SSL (Let's Encrypt), refer to the comprehensive [EC2 Deployment Guide](EC2_DEPLOYMENT_GUIDE.md).
 
 ---
 

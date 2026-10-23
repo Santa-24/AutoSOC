@@ -17,8 +17,8 @@ import { ComplianceControl } from "@/types/security";
 
 export const dynamic = "force-dynamic";
 
-export default function ComplianceMappingPage() {
-  const controls = getComplianceControls();
+export default async function ComplianceMappingPage() {
+  const controls = await getComplianceControls();
 
   const passCount = controls.filter((c) => c.status === "PASS").length;
   const failCount = controls.filter((c) => c.status === "FAIL").length;

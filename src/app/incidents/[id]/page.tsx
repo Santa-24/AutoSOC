@@ -24,20 +24,18 @@ import { DemoBanner } from "@/components/ui/demo-banner";
 import { SeverityBadge, StatusBadge, DemoTag } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmationModal } from "@/components/ui/modal";
-import { DEMO_INCIDENTS, DEMO_SECURITY_FINDINGS } from "@/lib/demo/synthetic-data";
-import { PlaybookId, DryRunResult, ResponseAction } from "@/types/security";
+import { PlaybookId, DryRunResult, ResponseAction, Incident, SecurityFinding } from "@/types/security";
 
 export default function IncidentDetailPage() {
   const params = useParams();
-  const incidentId = (params?.id as string) || "INC-2026-9041";
-  const incident = DEMO_INCIDENTS.find((i) => i.id === incidentId) || DEMO_INCIDENTS[0];
-  const relatedFindings = DEMO_SECURITY_FINDINGS.filter((f) =>
-    incident.findingIds.includes(f.id)
-  );
+  const incidentId = (params?.id as string) || "";
+  const [incident, setIncident] = useState<Incident | null>(null);
+  const [relatedFindings, setRelatedFindings] = useState<SecurityFinding[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Remediation State
-  const [selectedPlaybook, setSelectedPlaybook] = useState<PlaybookId>("EC2_QUARANTINE_ISOLATION");
-  const [targetResource, setTargetResource] = useState("i-0a81f33b1e");
+  const [selectedPlaybook, setSelectedPlaybook] = useState<PlaybookId>("S3_BLOCK_PUBLIC_ACCESS");
+  const [targetResource, setTargetResource] = useState("autosoc-audit-941905484053");
   const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
   const [isDryRunning, setIsDryRunning] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -45,8 +43,38 @@ export default function IncidentDetailPage() {
   const [executedAction, setExecutedAction] = useState<ResponseAction | null>(null);
 
   // Notes state
-  const [notes, setNotes] = useState(incident.notes);
+  const [notes, setNotes] = useState<{ id: string; author: string; timestamp: string; content: string }[]>([]);
   const [newNote, setNewNote] = useState("");
+
+  React.useEffect(() => {
+    let mounted = true;
+    Promise.all([
+      fetch("/api/incidents").then((r) => r.json()),
+      fetch("/api/findings").then((r) => r.json()),
+    ])
+      .then(([incData, findData]) => {
+        if (!mounted) return;
+        const incs: Incident[] = incData?.incidents || [];
+        const found = incs.find((i) => i.id === incidentId) || incs[0] || null;
+        setIncident(found);
+        if (found) {
+          setNotes(found.notes || []);
+          if (found.affectedResources?.[0]?.id) {
+            setTargetResource(found.affectedResources[0].id);
+          }
+          const allFinds: SecurityFinding[] = findData?.findings || [];
+          setRelatedFindings(allFinds.filter((f) => found.findingIds?.includes(f.id)));
+        }
+      })
+      .catch((err) => console.error("Failed to load incident detail:", err))
+      .finally(() => {
+        if (mounted) setIsLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [incidentId]);
 
   // Dry run simulation call
   const handleRunDryRun = async () => {
@@ -120,7 +148,7 @@ export default function IncidentDetailPage() {
 
   return (
     <div className="min-h-screen bg-charcoal-900 text-ivory-100 flex flex-col font-mono selection:bg-lime-500 selection:text-charcoal-950">
-      <DemoBanner isDemoMode={true} awsConnected={false} />
+      <DemoBanner />
       <ConsoleNav user={null} />
 
       <div className="flex-1 flex overflow-hidden">
@@ -136,23 +164,48 @@ export default function IncidentDetailPage() {
               <span>Back to Incidents Manager</span>
             </Link>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <SeverityBadge severity={incident.severity} size="md" />
-                <h1 className="text-xl sm:text-2xl font-black uppercase text-ivory-100">
-                  {incident.id}: {incident.title}
-                </h1>
-                {incident.isDemo && <DemoTag />}
-              </div>
+            {incident && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <SeverityBadge severity={incident.severity} size="md" />
+                  <h1 className="text-xl sm:text-2xl font-black uppercase text-ivory-100">
+                    {incident.id}: {incident.title}
+                  </h1>
+                  {incident.isDemo && <DemoTag />}
+                </div>
 
-              <div className="flex items-center gap-3">
-                <StatusBadge status={incident.status} />
-                <span className="text-xs text-ivory-400">
-                  Owner: <strong className="text-ivory-200">{incident.owner}</strong>
-                </span>
+                <div className="flex items-center gap-3">
+                  <StatusBadge status={incident.status} />
+                  <span className="text-xs text-ivory-400">
+                    Owner: <strong className="text-ivory-200">{incident.owner}</strong>
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {!incident ? (
+            <div className="bg-charcoal-850 border border-charcoal-700 p-12 text-center space-y-4">
+              <div className="flex justify-center">
+                <CheckCircle2 className="w-12 h-12 text-lime-400" />
+              </div>
+              <h2 className="text-lg font-bold text-ivory-100 uppercase tracking-wider">
+                No Active Incident Found
+              </h2>
+              <p className="text-xs text-ivory-400 max-w-md mx-auto leading-relaxed">
+                There are no open or compromised incidents matching this identifier. Continuous AWS telemetry correlation in ap-south-1 is active and nominal.
+              </p>
+              <div className="pt-2">
+                <Link href="/incidents">
+                  <Button variant="secondary" size="sm" className="gap-2">
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Return to Security Findings</span>
+                  </Button>
+                </Link>
               </div>
             </div>
-          </div>
+          ) : (
+            <>
 
           {/* AI Grounded Synthesis Box */}
           <div className="p-5 bg-charcoal-850 border-l-4 border-lime-500 border-r border-t border-b border-charcoal-700 space-y-3">
@@ -443,6 +496,8 @@ export default function IncidentDetailPage() {
               </div>
             </div>
           </div>
+          </>
+          )}
         </main>
       </div>
 

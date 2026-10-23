@@ -16,8 +16,8 @@ import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
-export default function IAMRiskPage() {
-  const risks = getIAMRisks();
+export default async function IAMRiskPage() {
+  const risks = await getIAMRisks();
 
   return (
     <ConsoleShell>
@@ -57,7 +57,20 @@ export default function IAMRiskPage() {
 
         {/* IAM Risk Cards */}
         <div className="space-y-4">
-          {risks.map((risk) => (
+          {risks.length === 0 ? (
+            <div className="bg-charcoal-850 border border-charcoal-700 p-8 text-center space-y-3">
+              <div className="flex justify-center">
+                <CheckCircle2 className="w-10 h-10 text-lime-400" />
+              </div>
+              <h3 className="text-sm font-bold text-ivory-100 uppercase tracking-wider">
+                Zero High-Risk IAM Vulnerabilities Detected
+              </h3>
+              <p className="text-xs text-ivory-400 max-w-md mx-auto leading-relaxed">
+                All scanned IAM credentials and policies comply with least-privilege benchmarks. No unrotated keys or lateral movement pathways identified.
+              </p>
+            </div>
+          ) : (
+            risks.map((risk) => (
             <div
               key={risk.id}
               className="bg-charcoal-850 border border-charcoal-700 p-6 space-y-4 text-xs font-mono"
@@ -117,7 +130,7 @@ export default function IAMRiskPage() {
                 </Link>
               </div>
             </div>
-          ))}
+          )))}
         </div>
       </div>
     </ConsoleShell>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FileSearch,
   Shield,
@@ -11,17 +11,40 @@ import {
   Lock,
   Layers,
   Search,
+  Loader2,
 } from "lucide-react";
 import { ConsoleNav } from "@/components/layout/console-nav";
 import { ConsoleSidebar } from "@/components/layout/console-sidebar";
 import { DemoBanner } from "@/components/ui/demo-banner";
-import { DEMO_FORENSIC_RECORDS } from "@/lib/demo/synthetic-data";
 import { ForensicRecord } from "@/types/security";
 
 export default function ForensicsPage() {
-  const [records] = useState<ForensicRecord[]>(DEMO_FORENSIC_RECORDS);
-  const [selectedRecord, setSelectedRecord] = useState<ForensicRecord | null>(records[0]);
+  const [records, setRecords] = useState<ForensicRecord[]>([]);
+  const [selectedRecord, setSelectedRecord] = useState<ForensicRecord | null>(null);
   const [filterSearch, setFilterSearch] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    fetch("/api/forensics")
+      .then((res) => res.json())
+      .then((data) => {
+        if (mounted && data?.records) {
+          setRecords(data.records);
+          if (data.records.length > 0) {
+            setSelectedRecord(data.records[0]);
+          }
+        }
+      })
+      .catch((err) => console.error("Failed to load forensics:", err))
+      .finally(() => {
+        if (mounted) setIsLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const filtered = records.filter(
     (r) =>
@@ -33,7 +56,7 @@ export default function ForensicsPage() {
 
   return (
     <div className="min-h-screen bg-charcoal-900 text-ivory-100 flex flex-col font-mono selection:bg-lime-500 selection:text-charcoal-950">
-      <DemoBanner isDemoMode={true} awsConnected={false} />
+      <DemoBanner />
       <ConsoleNav user={null} />
 
       <div className="flex-1 flex overflow-hidden">
@@ -77,40 +100,54 @@ export default function ForensicsPage() {
               </div>
 
               <div className="space-y-3">
-                {filtered.map((record) => {
-                  const isSelected = selectedRecord?.id === record.id;
-                  return (
-                    <div
-                      key={record.id}
-                      onClick={() => setSelectedRecord(record)}
-                      className={`p-4 border cursor-pointer transition ${
-                        isSelected
-                          ? "bg-lime-950/40 border-lime-500"
-                          : "bg-charcoal-850 border-charcoal-700 hover:border-charcoal-600"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-lime-400">
-                          {record.eventName}
-                        </span>
-                        <span className="text-[10px] text-ivory-500">
-                          {record.timestamp.slice(11, 19)} UTC
-                        </span>
-                      </div>
+                {isLoading ? (
+                  <div className="p-8 text-center text-ivory-400 bg-charcoal-850 border border-charcoal-700 flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="w-5 h-5 text-lime-400 animate-spin" />
+                    <span className="text-xs">Querying live AWS CloudTrail event stream (ap-south-1)...</span>
+                  </div>
+                ) : filtered.length === 0 ? (
+                  <div className="p-8 text-center text-ivory-400 bg-charcoal-850 border border-charcoal-700 space-y-1">
+                    <span className="text-xs font-bold block text-ivory-200">No Forensic Records Found</span>
+                    <span className="text-[11px] text-ivory-500">
+                      No matching events in the current CloudTrail ingestion window.
+                    </span>
+                  </div>
+                ) : (
+                  filtered.map((record) => {
+                    const isSelected = selectedRecord?.id === record.id;
+                    return (
+                      <div
+                        key={record.id}
+                        onClick={() => setSelectedRecord(record)}
+                        className={`p-4 border cursor-pointer transition ${
+                          isSelected
+                            ? "bg-lime-950/40 border-lime-500"
+                            : "bg-charcoal-850 border-charcoal-700 hover:border-charcoal-600"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-lime-400">
+                            {record.eventName}
+                          </span>
+                          <span className="text-[10px] text-ivory-500">
+                            {record.timestamp.slice(11, 19)} UTC
+                          </span>
+                        </div>
 
-                      <div className="text-[11px] text-ivory-300 mt-1 truncate">
-                        Actor: {record.actorArn}
-                      </div>
+                        <div className="text-[11px] text-ivory-300 mt-1 truncate">
+                          Actor: {record.actorArn}
+                        </div>
 
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-charcoal-750 text-[10px] text-ivory-400">
-                        <span>IP: {record.sourceIpAddress}</span>
-                        <span className="font-mono text-lime-400 truncate max-w-[180px]">
-                          {record.sha256Hash.slice(0, 16)}...
-                        </span>
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-charcoal-750 text-[10px] text-ivory-400">
+                          <span>IP: {record.sourceIpAddress}</span>
+                          <span className="font-mono text-lime-400 truncate max-w-[180px]">
+                            {record.sha256Hash.slice(0, 16)}...
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </div>
 

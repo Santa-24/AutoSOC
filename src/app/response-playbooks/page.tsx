@@ -24,8 +24,8 @@ import { PLAYBOOK_DEFINITIONS } from "@/lib/playbooks/definitions";
 import { PlaybookId, DryRunResult, ResponseAction } from "@/types/security";
 
 export default function PlaybooksCatalogPage() {
-  const [selectedPlaybookId, setSelectedPlaybookId] = useState<PlaybookId>("EC2_QUARANTINE_ISOLATION");
-  const [targetResource, setTargetResource] = useState("i-0a81f33b1e");
+  const [selectedPlaybookId, setSelectedPlaybookId] = useState<PlaybookId>("S3_BLOCK_PUBLIC_ACCESS");
+  const [targetResource, setTargetResource] = useState("autosoc-audit-941905484053");
   const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
   const [isDryRunning, setIsDryRunning] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -88,7 +88,7 @@ export default function PlaybooksCatalogPage() {
 
   return (
     <div className="min-h-screen bg-charcoal-900 text-ivory-100 flex flex-col font-mono selection:bg-lime-500 selection:text-charcoal-950">
-      <DemoBanner isDemoMode={true} awsConnected={false} />
+      <DemoBanner />
       <ConsoleNav user={null} />
 
       <div className="flex-1 flex overflow-hidden">
@@ -133,10 +133,10 @@ export default function PlaybooksCatalogPage() {
                       setSelectedPlaybookId(pb.id);
                       setDryRunResult(null);
                       setExecutedAction(null);
-                      if (pb.targetService === "EC2") setTargetResource("i-0a81f33b1e");
-                      else if (pb.targetService === "S3") setTargetResource("prod-customer-invoice-vault");
-                      else if (pb.targetService === "IAM") setTargetResource("AKIAIOSFODNN7EXAMPLE");
-                      else if (pb.targetService === "WAFv2") setTargetResource("198.51.100.42");
+                      if (pb.targetService === "EC2") setTargetResource("i-0123456789abcdef0");
+                      else if (pb.targetService === "S3") setTargetResource("autosoc-audit-941905484053");
+                      else if (pb.targetService === "IAM") setTargetResource("AKIA5WTPRDEKVNPQMDYX");
+                      else if (pb.targetService === "WAFv2") setTargetResource("203.0.113.88");
                     }}
                     className={`p-4 border cursor-pointer transition-all ${
                       isSelected

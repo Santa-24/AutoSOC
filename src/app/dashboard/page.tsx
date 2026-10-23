@@ -34,6 +34,12 @@ export default async function DashboardPage() {
   const highCount = findings.filter((f) => f.severity === "HIGH").length;
   const mediumCount = findings.filter((f) => f.severity === "MEDIUM").length;
 
+  const isNominal = criticalCount === 0 && highCount === 0;
+  const riskIndex = isNominal ? (findings.length === 0 ? "8 / 100" : "24 / 100") : `${Math.min(95, 25 + criticalCount * 30 + highCount * 15)} / 100`;
+  const riskSubtitle = isNominal
+    ? "Low Risk (Environment Secure)"
+    : `Elevated Risk (${criticalCount} critical, ${highCount} high)`;
+
   return (
     <ConsoleShell>
       <div className="space-y-6">
@@ -71,23 +77,23 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             label="Cloud Security Risk Index"
-            value="74 / 100"
-            subtitle="Elevated Risk (2 critical vectors)"
-            change="+6 pts"
-            changeType="negative"
-            sparklineData={[45, 52, 48, 62, 59, 71, 74]}
-            sparklineColor="alert"
-            icon={<ShieldAlert className="w-4 h-4 text-[#FF6666]" />}
+            value={riskIndex}
+            subtitle={riskSubtitle}
+            change={isNominal ? "0 alerts" : `${criticalCount} critical`}
+            changeType={isNominal ? "positive" : "negative"}
+            sparklineData={isNominal ? [15, 12, 10, 8, 8, 8, 8] : [45, 52, 48, 62, 59, 71, 74]}
+            sparklineColor={isNominal ? "lime" : "alert"}
+            icon={<ShieldAlert className={`w-4 h-4 ${isNominal ? "text-lime-400" : "text-[#FF6666]"}`} />}
           />
           <MetricCard
             label="Active Correlated Incidents"
             value={incidents.length}
-            subtitle="1 awaiting approval gate"
-            change="1 new"
-            changeType="negative"
-            sparklineData={[1, 1, 2, 1, 2, 2, 2]}
-            sparklineColor="alert"
-            icon={<AlertOctagon className="w-4 h-4 text-[#FFA066]" />}
+            subtitle={incidents.length === 0 ? "Zero threats active" : `${incidents.length} awaiting response`}
+            change={incidents.length === 0 ? "Optimal" : "Requires Action"}
+            changeType={incidents.length === 0 ? "positive" : "negative"}
+            sparklineData={incidents.length === 0 ? [0, 0, 0, 0, 0, 0, 0] : [1, 1, 2, 1, 2, 2, 2]}
+            sparklineColor={incidents.length === 0 ? "lime" : "alert"}
+            icon={<AlertOctagon className={`w-4 h-4 ${incidents.length === 0 ? "text-lime-400" : "text-[#FFA066]"}`} />}
           />
           <MetricCard
             label="Ingested Telemetry Findings"
@@ -164,65 +170,93 @@ export default async function DashboardPage() {
             </div>
 
             <div className="space-y-3 font-mono">
-              {incidents.map((incident) => (
-                <div
-                  key={incident.id}
-                  className="bg-charcoal-850 border border-charcoal-700 hover:border-charcoal-600 transition p-4 space-y-3 relative group"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-charcoal-750 pb-2.5">
-                    <div className="flex items-center gap-2">
-                      <SeverityBadge severity={incident.severity} size="sm" />
-                      <span className="text-xs font-bold text-ivory-100">
-                        {incident.id}
-                      </span>
-                      {incident.isDemo && <DemoTag />}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <StatusBadge status={incident.status} />
-                      <span className="text-[10px] text-ivory-500">
-                        {incident.createdAt.slice(11, 16)} UTC
-                      </span>
-                    </div>
+              {incidents.length === 0 ? (
+                <div className="bg-charcoal-850 border border-charcoal-700 p-8 text-center space-y-3">
+                  <div className="flex justify-center">
+                    <CheckCircle2 className="w-10 h-10 text-lime-400" />
                   </div>
-
-                  <div>
-                    <h3 className="text-sm font-bold text-ivory-100">
-                      {incident.title}
-                    </h3>
-                    <p className="text-xs text-ivory-400 mt-1 leading-relaxed line-clamp-2">
-                      {incident.summary}
-                    </p>
-                  </div>
-
-                  {/* Resource Badges */}
-                  <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
-                    <span className="text-ivory-500 text-[10px] uppercase">
-                      Affected:
-                    </span>
-                    {incident.affectedResources.map((res) => (
-                      <span
-                        key={res.id}
-                        className="px-2 py-0.5 bg-charcoal-900 border border-charcoal-750 text-ivory-300 text-[10px]"
-                      >
-                        {res.type.replace("AWS::", "")}: {res.id}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Footer Actions */}
-                  <div className="flex items-center justify-between pt-2 border-t border-charcoal-750 text-xs">
-                    <span className="text-[10px] text-ivory-500">
-                      Owner: {incident.owner}
-                    </span>
-                    <Link href={`/incidents/${incident.id}`}>
-                      <Button variant="secondary" size="sm" className="gap-1 text-[11px] py-1">
-                        <span>Investigate & Respond</span>
-                        <ArrowRight className="w-3 h-3" />
+                  <h3 className="text-sm font-bold text-ivory-100 uppercase tracking-wider">
+                    Zero Active Security Incidents
+                  </h3>
+                  <p className="text-xs text-ivory-400 max-w-md mx-auto leading-relaxed">
+                    All telemetry across AWS region {health.awsIdentity.region} is nominal. No multi-stage attack paths or active breaches detected.
+                  </p>
+                  <div className="pt-2 flex items-center justify-center gap-3">
+                    <Link href="/forensics">
+                      <Button variant="secondary" size="sm" className="gap-1.5 text-xs">
+                        <Activity className="w-3.5 h-3.5 text-lime-400" />
+                        <span>Live CloudTrail Forensics</span>
+                      </Button>
+                    </Link>
+                    <Link href="/integrations">
+                      <Button variant="secondary" size="sm" className="gap-1.5 text-xs">
+                        <Radio className="w-3.5 h-3.5 text-lime-400" />
+                        <span>AWS Ingestion Status</span>
                       </Button>
                     </Link>
                   </div>
                 </div>
-              ))}
+              ) : (
+                incidents.map((incident) => (
+                  <div
+                    key={incident.id}
+                    className="bg-charcoal-850 border border-charcoal-700 hover:border-charcoal-600 transition p-4 space-y-3 relative group"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-charcoal-750 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <SeverityBadge severity={incident.severity} size="sm" />
+                        <span className="text-xs font-bold text-ivory-100">
+                          {incident.id}
+                        </span>
+                        {incident.isDemo && <DemoTag />}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <StatusBadge status={incident.status} />
+                        <span className="text-[10px] text-ivory-500">
+                          {incident.createdAt.slice(11, 16)} UTC
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-bold text-ivory-100">
+                        {incident.title}
+                      </h3>
+                      <p className="text-xs text-ivory-400 mt-1 leading-relaxed line-clamp-2">
+                        {incident.summary}
+                      </p>
+                    </div>
+
+                    {/* Resource Badges */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+                      <span className="text-ivory-500 text-[10px] uppercase">
+                        Affected:
+                      </span>
+                      {incident.affectedResources.map((res) => (
+                        <span
+                          key={res.id}
+                          className="px-2 py-0.5 bg-charcoal-900 border border-charcoal-750 text-ivory-300 text-[10px]"
+                        >
+                          {res.type.replace("AWS::", "")}: {res.id}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="flex items-center justify-between pt-2 border-t border-charcoal-750 text-xs">
+                      <span className="text-[10px] text-ivory-500">
+                        Owner: {incident.owner}
+                      </span>
+                      <Link href={`/incidents/${incident.id}`}>
+                        <Button variant="secondary" size="sm" className="gap-1 text-[11px] py-1">
+                          <span>Investigate & Respond</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

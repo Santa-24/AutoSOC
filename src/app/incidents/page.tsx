@@ -9,7 +9,9 @@ import {
   ArrowRight,
   ExternalLink,
   Shield,
+  ShieldCheck,
   Layers,
+  Loader2,
 } from "lucide-react";
 import { ConsoleNav } from "@/components/layout/console-nav";
 import { ConsoleSidebar } from "@/components/layout/console-sidebar";
@@ -17,14 +19,33 @@ import { DemoBanner } from "@/components/ui/demo-banner";
 import { SeverityBadge, StatusBadge, DemoTag } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SecurityFinding, SeverityLevel, FindingStatus } from "@/types/security";
-import { DEMO_SECURITY_FINDINGS } from "@/lib/demo/synthetic-data";
 
 export default function IncidentsPage() {
-  const [findings, setFindings] = useState<SecurityFinding[]>(DEMO_SECURITY_FINDINGS);
+  const [findings, setFindings] = useState<SecurityFinding[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSeverity, setSelectedSeverity] = useState<string>("ALL");
   const [selectedSource, setSelectedSource] = useState<string>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
+
+  useEffect(() => {
+    let mounted = true;
+    fetch("/api/findings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (mounted && data?.findings) {
+          setFindings(data.findings);
+        }
+      })
+      .catch((err) => console.error("Failed to load findings:", err))
+      .finally(() => {
+        if (mounted) setIsLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const filteredFindings = findings.filter((f) => {
     const matchesSearch =
@@ -48,7 +69,7 @@ export default function IncidentsPage() {
 
   return (
     <div className="min-h-screen bg-charcoal-900 text-ivory-100 flex flex-col font-mono selection:bg-lime-500 selection:text-charcoal-950">
-      <DemoBanner isDemoMode={true} awsConnected={false} />
+      <DemoBanner />
       <ConsoleNav user={null} />
 
       <div className="flex-1 flex overflow-hidden">
@@ -153,84 +174,101 @@ export default function IncidentsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-charcoal-750">
-                  {filteredFindings.map((finding) => (
-                    <tr
-                      key={finding.id}
-                      className="hover:bg-charcoal-800/60 transition-colors group"
-                    >
-                      {/* Severity */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <SeverityBadge severity={finding.severity} size="sm" />
-                      </td>
-
-                      {/* ID / Source */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="font-bold text-ivory-100 flex items-center gap-1.5">
-                          <span>{finding.id}</span>
-                          {finding.isDemo && <DemoTag />}
-                        </div>
-                        <span className="text-[10px] text-ivory-400">
-                          {finding.source}
-                        </span>
-                      </td>
-
-                      {/* Title & Description */}
-                      <td className="py-3.5 px-4 max-w-md">
-                        <div className="font-bold text-ivory-100 group-hover:text-lime-300 transition-colors">
-                          {finding.title}
-                        </div>
-                        <div className="text-[11px] text-ivory-400 mt-0.5 line-clamp-1">
-                          {finding.description}
-                        </div>
-                      </td>
-
-                      {/* Primary Resource */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {finding.resources[0] ? (
-                          <div>
-                            <span className="text-[10px] text-ivory-500 block">
-                              {finding.resources[0].type.replace("AWS::", "")}
-                            </span>
-                            <span className="font-bold text-lime-400">
-                              {finding.resources[0].id}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-ivory-500">—</span>
-                        )}
-                      </td>
-
-                      {/* Region & Account */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="text-ivory-200">{finding.region}</div>
-                        <div className="text-[10px] text-ivory-500">
-                          {finding.accountId}
-                        </div>
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <StatusBadge status={finding.status} />
-                      </td>
-
-                      {/* Action */}
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <Link href="/incidents/INC-2026-9041">
-                          <Button variant="secondary" size="sm" className="gap-1 text-[11px] py-1">
-                            <span>Triage</span>
-                            <ArrowRight className="w-3 h-3" />
-                          </Button>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-
-                  {filteredFindings.length === 0 && (
+                  {isLoading ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-ivory-400">
-                        No telemetry findings match the selected filter criteria.
+                      <td colSpan={7} className="py-12 text-center text-ivory-400">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <Loader2 className="w-5 h-5 text-lime-400 animate-spin" />
+                          <span className="text-xs">Querying live AWS telemetry finding stream...</span>
+                        </div>
                       </td>
                     </tr>
+                  ) : filteredFindings.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-ivory-400">
+                        <div className="flex flex-col items-center justify-center gap-2 max-w-md mx-auto">
+                          <ShieldCheck className="w-8 h-8 text-lime-400" />
+                          <span className="font-bold text-ivory-100 text-sm">
+                            Zero Active Security Findings
+                          </span>
+                          <span className="text-[11px] text-ivory-400 leading-relaxed">
+                            No security findings reported from active telemetry sources. Your AWS cloud environment currently has 0 detected indicators of compromise.
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredFindings.map((finding) => (
+                      <tr
+                        key={finding.id}
+                        className="hover:bg-charcoal-800/60 transition-colors group"
+                      >
+                        {/* Severity */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <SeverityBadge severity={finding.severity} size="sm" />
+                        </td>
+
+                        {/* ID / Source */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="font-bold text-ivory-100 flex items-center gap-1.5">
+                            <span>{finding.id}</span>
+                            {finding.isDemo && <DemoTag />}
+                          </div>
+                          <span className="text-[10px] text-ivory-400">
+                            {finding.source}
+                          </span>
+                        </td>
+
+                        {/* Title & Description */}
+                        <td className="py-3.5 px-4 max-w-md">
+                          <div className="font-bold text-ivory-100 group-hover:text-lime-300 transition-colors">
+                            {finding.title}
+                          </div>
+                          <div className="text-[11px] text-ivory-400 mt-0.5 line-clamp-1">
+                            {finding.description}
+                          </div>
+                        </td>
+
+                        {/* Primary Resource */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {finding.resources[0] ? (
+                            <div>
+                              <span className="text-[10px] text-ivory-500 block">
+                                {finding.resources[0].type.replace("AWS::", "")}
+                              </span>
+                              <span className="font-bold text-lime-400">
+                                {finding.resources[0].id}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-ivory-500">—</span>
+                          )}
+                        </td>
+
+                        {/* Region & Account */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="text-ivory-200">{finding.region}</div>
+                          <div className="text-[10px] text-ivory-500">
+                            {finding.accountId}
+                          </div>
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <StatusBadge status={finding.status} />
+                        </td>
+
+                        {/* Action */}
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <Link href="/incidents/INC-2026-9041">
+                            <Button variant="secondary" size="sm" className="gap-1 text-[11px] py-1">
+                              <span>Triage</span>
+                              <ArrowRight className="w-3 h-3" />
+                            </Button>
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>

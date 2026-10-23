@@ -16,6 +16,8 @@ import { getEnv } from "@/lib/env";
 import { fetchLiveSecurityHubFindings } from "@/lib/aws/security-hub";
 import { fetchLiveGuardDutyFindings } from "@/lib/aws/guardduty";
 import { fetchLiveForensicEvents } from "@/lib/aws/cloudtrail";
+import { fetchLiveIAMRisks } from "@/lib/aws/iam";
+import { fetchLiveComplianceControls } from "@/lib/aws/compliance";
 
 // Mutable in-memory store for active session state (simulates DynamoDB incident persistence)
 let memoryIncidents: Incident[] = [...DEMO_INCIDENTS];
@@ -128,10 +130,18 @@ export async function getForensicRecords(): Promise<ForensicRecord[]> {
   return liveRecords;
 }
 
-export function getComplianceControls(): ComplianceControl[] {
-  return DEMO_COMPLIANCE_CONTROLS;
+export async function getComplianceControls(): Promise<ComplianceControl[]> {
+  const demoActive = isDemoModeActive();
+  if (demoActive) {
+    return DEMO_COMPLIANCE_CONTROLS;
+  }
+  return fetchLiveComplianceControls();
 }
 
-export function getIAMRisks(): IAMRiskItem[] {
-  return DEMO_IAM_RISKS;
+export async function getIAMRisks(): Promise<IAMRiskItem[]> {
+  const demoActive = isDemoModeActive();
+  if (demoActive) {
+    return DEMO_IAM_RISKS;
+  }
+  return fetchLiveIAMRisks();
 }

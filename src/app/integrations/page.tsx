@@ -43,7 +43,7 @@ export default function IntegrationsPage() {
 
   return (
     <div className="min-h-screen bg-charcoal-900 text-ivory-100 flex flex-col font-mono selection:bg-lime-500 selection:text-charcoal-950">
-      <DemoBanner isDemoMode={true} awsConnected={health?.awsIdentity.connected || false} />
+      <DemoBanner />
       <ConsoleNav user={null} />
 
       <div className="flex-1 flex overflow-hidden">

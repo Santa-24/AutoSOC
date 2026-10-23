@@ -24,9 +24,9 @@ interface NavItem {
   badge?: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
+const BASE_NAV_ITEMS: NavItem[] = [
   { name: "Command Center", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Incidents & Findings", href: "/incidents", icon: AlertOctagon, badge: "2 Active" },
+  { name: "Incidents & Findings", href: "/incidents", icon: AlertOctagon },
   { name: "AI Investigation", href: "/investigations", icon: Sparkles },
   { name: "Response Playbooks", href: "/response-playbooks", icon: ShieldCheck, badge: "Gated" },
   { name: "Forensics Timeline", href: "/forensics", icon: FileSearch },
@@ -39,6 +39,22 @@ const NAV_ITEMS: NavItem[] = [
 
 export function ConsoleSidebar() {
   const pathname = usePathname();
+  const [activeCount, setActiveCount] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    let mounted = true;
+    fetch("/api/incidents")
+      .then((res) => res.json())
+      .then((data) => {
+        if (mounted && typeof data?.count === "number") {
+          setActiveCount(data.count);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <aside className="w-64 bg-charcoal-900 border-r border-charcoal-700 flex flex-col shrink-0 min-h-[calc(100vh-3.5rem)] select-none">
@@ -61,9 +77,20 @@ export function ConsoleSidebar() {
 
       {/* Navigation List */}
       <nav className="flex-1 p-3 space-y-1 font-mono text-xs overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
+        {BASE_NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;
+
+          const badgeText =
+            item.href === "/incidents"
+              ? activeCount !== null
+                ? activeCount > 0
+                  ? `${activeCount} Active`
+                  : "Secured"
+                : null
+              : item.badge;
+
+          const isSecuredBadge = badgeText === "Secured";
 
           return (
             <Link
@@ -80,15 +107,17 @@ export function ConsoleSidebar() {
                 <span className="truncate">{item.name}</span>
               </div>
 
-              {item.badge && (
+              {badgeText && (
                 <span
                   className={`text-[9px] px-1.5 py-0.2 border uppercase tracking-wider ${
-                    isActive
+                    isSecuredBadge
+                      ? "bg-[#122416] border-[#22572E] text-[#63E894]"
+                      : isActive
                       ? "bg-lime-900/60 border-lime-700 text-lime-300"
                       : "bg-charcoal-800 border-charcoal-700 text-ivory-400"
                   }`}
                 >
-                  {item.badge}
+                  {badgeText}
                 </span>
               )}
             </Link>

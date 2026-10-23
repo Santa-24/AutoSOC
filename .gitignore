@@ -33,7 +33,16 @@ yarn-error.log*
 # Operating System
 .DS_Store
 *.pem
+*.key
+*.id_rsa
+*.id_ed25519
 Thumbs.db
+
+# Local Setup & User Credential Files
+AWS_CREDENTIALS_SETUP*.txt
+
+# Build Cache
+tsconfig.tsbuildinfo
 
 # IDE and Editor
 .idea

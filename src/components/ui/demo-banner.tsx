@@ -11,11 +11,28 @@ interface DemoBannerProps {
 }
 
 export function DemoBanner({
-  isDemoMode,
-  awsConnected,
+  isDemoMode = false,
+  awsConnected = false,
   onToggleDemoMode,
-}: DemoBannerProps) {
+}: Partial<DemoBannerProps>) {
   const [active, setActive] = useState(isDemoMode);
+  const [connected, setConnected] = useState(awsConnected);
+
+  React.useEffect(() => {
+    let mounted = true;
+    fetch("/api/health")
+      .then((res) => res.json())
+      .then((data) => {
+        if (mounted && data?.awsIdentity) {
+          setActive(data.demoModeActive ?? false);
+          setConnected(data.awsIdentity.connected ?? false);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleToggle = () => {
     const next = !active;
@@ -32,7 +49,7 @@ export function DemoBanner({
       className={`w-full py-1.5 px-4 text-xs font-mono select-none flex flex-wrap items-center justify-between gap-3 border-b ${
         active
           ? "bg-[#212411] border-[#535C20] text-[#E8F086]"
-          : awsConnected
+          : connected
           ? "bg-[#112418] border-[#225732] text-[#86F0AA]"
           : "bg-[#291414] border-[#662323] text-[#FFA8A8]"
       }`}
@@ -43,7 +60,7 @@ export function DemoBanner({
             <AlertCircle className="w-3.5 h-3.5 text-lime-400" />
             SYNTHETIC DEMO DATA ACTIVE
           </span>
-        ) : awsConnected ? (
+        ) : connected ? (
           <span className="flex items-center gap-1.5 font-bold uppercase tracking-widest text-[11px] px-1.5 py-0.5 bg-[#183B24] border border-[#2B7344] text-[#A6FFC5]">
             <ShieldCheck className="w-3.5 h-3.5 text-[#63E894]" />
             LIVE AWS SECURITY OPERATIONS CONNECTED
@@ -58,7 +75,7 @@ export function DemoBanner({
         <span className="hidden sm:inline text-ivory-300">
           {active
             ? "Displaying isolated synthetic attack scenarios. Real AWS API mutations remain strictly gated."
-            : awsConnected
+            : connected
             ? "Server-side STS identity verified. Live findings stream enabled."
             : "Live telemetry disabled. Configure AWS credentials in AWS_CREDENTIALS_SETUP.txt or toggle Demo Data."}
         </span>
