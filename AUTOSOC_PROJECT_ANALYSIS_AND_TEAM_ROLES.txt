@@ -17,12 +17,12 @@ TABLE OF CONTENTS
 5. SERVICES & RESOURCES USED TO BUILD THIS PROJECT
 6. ENVIRONMENT CONFIGURATION CONSOLIDATION (.ENV)
 7. TEAM MEMBERS: DETAILED WORK, ARTIFACTS CREATED & OPERATIONAL USE
-   - Member 1: Cloud Architect / Team Lead
-   - Member 2: Network Engineer
-   - Member 3: Application Engineer
-   - Member 4: Database Engineer
-   - Member 5: Security & DevOps Engineer
-   - Member 6: Reliability & Testing Engineer
+   - Member 1: Cloud Security Architect & Full-Stack Lead
+   - Member 2: Defensive Network & Perimeter Security Engineer
+   - Member 3: Frontend & Application Tier Engineer
+   - Member 4: Cloud Storage & Forensic Database Engineer
+   - Member 5: Identity & Access Management (IAM) & Cloud DevOps Engineer
+   - Member 6: AI Intelligence, Compliance & Reliability Testing Engineer
 
 ================================================================================
 1. EXECUTIVE PROJECT SUMMARY & CORE PURPOSE (PROJECT USE)
@@ -333,179 +333,136 @@ responsibilities, the AWS components they created, and how their work connects
 to the enterprise architecture and AutoSOC.
 
 --------------------------------------------------------------------------------
-MEMBER 1: 🏗️ Cloud Architect / Team Lead
+MEMBER 1: 🏗️ Cloud Security Architect & Full-Stack Lead
 --------------------------------------------------------------------------------
-Role: Cloud Architect / Team Lead
-Main Responsibility: Overall Architecture & Cross-Service Integration
-AWS Components: Architecture Blueprint, Multi-Tier VPC Design, System Documentation
+Role: Cloud Security Architect & Full-Stack Lead
+Main Responsibility: End-to-End System Architecture, 7-Stage Autonomous SOC Loop & Configuration Security
+AWS Components: Architecture Blueprint, AWS SDK v3 Server-Side Engine, Zod Security Schemas, Zero-Secret Runtime
 
 1. What the Member Worked On:
-   - Designed the high-level enterprise cloud architecture and established the 7-stage 
-     autonomous SOC loop (Detect -> Correlate -> Triage -> Investigate -> Approve/Respond 
-     -> Record -> Report).
-   - Defined the security boundaries, data flow diagrams, threat models, and interface 
-     specifications linking frontend Next.js clients, backend APIs, and AWS services.
-   - Authored the system engineering documentation, API schemas, and deployment guides.
+   - Architected the 7-stage autonomous SOC pipeline (Detect -> Correlate -> Triage -> Investigate -> Approve/Respond -> Record -> Report).
+   - Designed server-side runtime boundaries in Next.js 14 App Router ensuring AWS SDK credentials never leak into client browser bundles.
+   - Consolidated fragmented environment configurations into one global `.env` file with strict Zod type validation.
+   - Authored the system architecture documentation (`README.md`, `SECURITY.md`, and deployment manuals).
 
 2. What They Created:
-   - The end-to-end multi-tier architectural blueprint dividing workloads into Public, 
-     Application, and Database tiers across Multiple Availability Zones (Multi-AZ).
-   - The comprehensive technical documentation, including the project `README.md`, 
-     `SECURITY.md`, and `EC2_DEPLOYMENT_GUIDE.md`.
-   - The centralized environment configuration schema (`src/lib/env.ts`) using Zod to 
-     validate credentials and parameters without leaking secrets into browser bundles.
+   - The centralized environment configuration schema (`src/lib/env.ts`) parsing AWS credentials, regions, and feature flags with strict typing.
+   - The deterministic telemetry correlation engine (`src/lib/store/soc-store.ts`) grouping multi-signal telemetry into prioritized Incidents.
+   - High-level architecture documentation and system design specifications.
 
 3. Operational Use & Integration with AutoSOC:
-   - Provides the overarching architectural foundation that ensures every other team 
-     member's component integrates cleanly.
-   - AutoSOC relies on Member 1's architecture to establish zero-browser-secrets principles 
-     and to ensure all AWS SDK calls run securely inside server-side Node.js runtimes.
+   - Establishes the foundation that coordinates all telemetry ingestion, AI investigation, and remediation modules.
+   - Guarantees zero credential leakage by keeping all AWS API interactions strictly within server-side runtimes.
 
 --------------------------------------------------------------------------------
-MEMBER 2: 🌐 Network Engineer
+MEMBER 2: 🛡️ Defensive Network & Perimeter Security Engineer
 --------------------------------------------------------------------------------
-Role: Network Engineer
-Main Responsibility: Networking Infrastructure & Traffic Routing
-AWS Components: VPC, Public/Private Subnets, Internet Gateway (IGW), NAT Gateway, Route Tables
+Role: Defensive Network & Perimeter Security Engineer
+Main Responsibility: Host Quarantine Isolation, Edge Perimeter Defense & Network Attack Surface Reduction
+AWS Components: Amazon EC2 Security Group Isolation, AWS WAFv2 Dynamic IP Sets, Network Blast Radius Evaluation
 
 1. What the Member Worked On:
-   - Engineered the foundational Amazon Virtual Private Cloud (VPC) network in the `ap-south-1` 
-     region to isolate application and database tiers from direct internet exposure.
-   - Configured high-availability multi-AZ public and private subnets.
-   - Implemented network routing topologies, egress NAT gateways, and Internet Gateways.
+   - Engineered automated network containment playbooks for compromised cloud compute instances.
+   - Integrated AWS Web Application Firewall (WAFv2) for automated edge IP reputation blocking against external attackers.
+   - Designed the Dry-Run network blast-radius simulation engine to evaluate network impact before containment.
 
 2. What They Created:
-   - Custom VPC with CIDR block `10.0.0.0/16`.
-   - Public Subnets (`10.0.1.0/24`, `10.0.2.0/24`) attached to an Internet Gateway (IGW) 
-     for internet-facing load balancers and reverse proxies.
-   - Private Application Subnets (`10.0.10.0/24`, `10.0.20.0/24`) for backend compute instances.
-   - Private Isolated Database Subnets (`10.0.30.0/24`, `10.0.40.0/24`) without default internet routes.
-   - Managed NAT Gateways with Elastic IPs (EIPs) and custom Route Tables allowing private instances 
-     to fetch security updates and reach AWS APIs without accepting inbound public connections.
+   - The `EC2_QUARANTINE_ISOLATION` playbook in `src/lib/playbooks/catalog.ts` using `ec2:DescribeInstances` and `ec2:ModifyInstanceAttribute` to strip malicious security groups and assign isolated quarantine security groups while preserving the instance state for digital forensics.
+   - The `WAF_IP_REPUTATION_BLOCK` playbook in `src/lib/playbooks/catalog.ts` using `wafv2:GetIPSet` and `wafv2:UpdateIPSet` to add adversary IP addresses to edge blocking sets within seconds.
+   - The Dry-Run Blast-Radius Simulator (`src/lib/playbooks/dry-run.ts`) validating network dependency safety.
 
 3. Operational Use & Integration with AutoSOC:
-   - Establishes the secure network boundaries that AutoSOC actively defends.
-   - When AutoSOC triggers the "EC2 Quarantine Isolation" playbook (`EC2_QUARANTINE_ISOLATION`), 
-     it reconfigures the network security group bindings within Member 2's VPC to sever network 
-     interfaces (ENIs) while preserving the instance state for digital forensic analysis.
+   - Enables AutoSOC to surgically sever attacker command-and-control (C2) communication without rebooting or destroying EC2 instances.
+   - Protects internet-facing endpoints by banning malicious external IP addresses at the CloudFront/ALB edge via AWS WAFv2.
 
 --------------------------------------------------------------------------------
-MEMBER 3: 💻 Application Engineer
+MEMBER 3: 💻 Frontend & Application Tier Engineer
 --------------------------------------------------------------------------------
-Role: Application Engineer
-Main Responsibility: Backend & Application Tier Engineering
-AWS Components: Java / Spring Boot Microservices, REST APIs, Amazon EC2 Compute
+Role: Frontend & Application Tier Engineer
+Main Responsibility: SOC Command Center UI, Real-Time Telemetry Dashboards & Analyst Workbenches
+AWS Components: Next.js 14 App Router, React Server/Client Components, Tailwind CSS Dark Theme, REST API Endpoints
 
 1. What the Member Worked On:
-   - Developed the backend business services and core REST API endpoints that handle 
-     enterprise business logic.
-   - Configured and optimized the Amazon EC2 compute instances hosting application workloads.
-   - Implemented application telemetry, logging, and health check endpoints.
+   - Built the enterprise SOC analyst user interface with dark glassmorphism styling, responsive layouts, and real-time status indicators.
+   - Implemented server-side REST API route handlers to bridge frontend interactive pages with backend AWS SDK connectors.
+   - Designed interactive analyst workbenches, including the AI Co-Pilot chat interface, MITRE ATT&CK visualizer, and response approval gates.
 
 2. What They Created:
-   - Production EC2 compute instances (e.g. `t3.medium` running Amazon Linux 2023) hosting the 
-     application runtime.
-   - Containerized backend microservices structured with robust input sanitization, error handling, 
-     and RESTful API standards.
-   - Integration hooks that export runtime application logs and performance telemetry to CloudWatch.
-   - Server-side controllers connecting application services to backend storage and database layers.
+   - Command Center Dashboard (`src/app/dashboard/page.tsx`) displaying real-time risk scores, active incidents, and telemetry gauges.
+   - Incidents & Findings Workbench (`src/app/incidents/page.tsx` and `src/app/incidents/[id]/page.tsx`) with search, filter, and MITRE mapping.
+   - AI Investigation Workbench (`src/app/investigations/page.tsx`) with interactive root-cause chat and prompt-injection safeguards.
+   - Server-side Next.js route handlers (`src/app/api/findings/route.ts`, `src/app/api/incidents/route.ts`, `src/app/api/investigate/route.ts`, `src/app/api/remediation/dry-run/route.ts`).
+   - NextAuth.js session management (`src/lib/auth.ts`) ensuring authenticated SecOps operator access.
 
 3. Operational Use & Integration with AutoSOC:
-   - Member 3's EC2 instances and REST APIs represent the primary operational workload running 
-     in the cloud.
-   - AutoSOC monitors these compute instances through Amazon Inspector (vulnerability scans), 
-     GuardDuty (detecting compromised instances beaconing to malicious command-and-control servers), 
-     and CloudTrail (auditing all EC2 API calls).
+   - Serves as the primary operational user interface for cloud security analysts and incident response teams.
+   - Displays live telemetry from AWS services with micro-second responsiveness and cached background revalidation.
 
 --------------------------------------------------------------------------------
-MEMBER 4: 🗄️ Database Engineer
+MEMBER 4: 🗄️ Cloud Storage & Forensic Database Engineer
 --------------------------------------------------------------------------------
-Role: Database Engineer
-Main Responsibility: Database, Storage & Secrets Management
-AWS Components: Amazon RDS, Amazon S3, AWS Secrets Manager, Automated Backups
+Role: Cloud Storage & Forensic Database Engineer
+Main Responsibility: Persistent Security Datastores, Immutable Forensic Audit Logging & Data Encryption
+AWS Components: Amazon S3 (Audit Storage), Amazon DynamoDB, AWS KMS Customer Managed Keys (CMK)
 
 1. What the Member Worked On:
-   - Designed and deployed the relational and object storage architecture for enterprise data.
-   - Configured automated daily snapshots, Multi-AZ replication, and point-in-time recovery (PITR).
-   - Managed encrypted secret storage and dynamic database credential rotation.
+   - Designed and deployed the S3 security audit engine inspecting bucket public access blocks and encryption configurations.
+   - Engineered the tamper-evident, append-only forensic audit logger with cryptographic SHA-256 verification and secret masking.
+   - Configured Amazon DynamoDB incident state storage and AWS KMS Customer Managed Key integration.
 
 2. What They Created:
-   - Amazon RDS (PostgreSQL/MySQL) database deployed in isolated private subnets across multiple AZs.
-   - Amazon S3 storage buckets configured with Server-Side Encryption via AWS KMS (SSE-KMS), 
-     lifecycle transition policies, and bucket versioning.
-   - AWS Secrets Manager integration for storing database passwords, API keys, and session secrets, 
-     eliminating hardcoded credentials in application repositories.
-   - Automated backup schedules and disaster recovery retention policies.
+   - Live S3 bucket security audit module (`src/lib/aws/s3.ts`) auditing CIS Benchmark 2.3 (Block Public Access) and CIS 2.7 (Server-Side Encryption) across all account buckets.
+   - The `S3_BLOCK_PUBLIC_ACCESS` playbook in `src/lib/playbooks/catalog.ts` using `s3:PutBucketPublicAccessBlock` to immediately halt unauthorized public S3 exposure.
+   - The Immutable Audit Logger (`src/lib/audit/audit-logger.ts`) producing SHA-256 hashed records with correlation IDs, masking secrets (keys, passwords, tokens) before persistence.
+   - Integration with dedicated audit bucket (`autosoc-audit-941905484053`), DynamoDB table (`AutoSOC_Incidents`), and KMS key (`91b0112a-d7fd-4bc5-bfbf-05ea3d26f886`).
 
 3. Operational Use & Integration with AutoSOC:
-   - Protects the organization's high-value data crown jewels.
-   - AutoSOC directly integrates with Member 4's storage layer:
-     * In the event of unauthorized bucket policy tampering, AutoSOC executes the 
-       "S3 Block Public Access" playbook (`S3_BLOCK_PUBLIC_ACCESS`) to instantly shut down data leaks.
-     * AutoSOC uses an encrypted S3 audit bucket (`autosoc-audit-941905484053`) and AWS KMS key 
-       (`91b0112a-d7fd-4bc5-bfbf-05ea3d26f886`) to store tamper-evident, immutable audit records.
+   - Provides immutable, non-repudiation audit trails for compliance auditors (CIS, NIST, ISO 27001).
+   - Automatically detects and remediates misconfigured or publicly exposed S3 buckets in real time.
 
 --------------------------------------------------------------------------------
-MEMBER 5: 🔐 Security & DevOps Engineer
+MEMBER 5: 🔐 Identity & Access Management (IAM) & Cloud DevOps Engineer
 --------------------------------------------------------------------------------
-Role: Security & DevOps Engineer
-Main Responsibility: Security Posture, Identity Boundaries & CI/CD Deployment
-AWS Components: AWS IAM, Security Groups (SG), Network ACLs (NACL), AWS WAF, AWS ACM, CI/CD
+Role: Identity & Access Management (IAM) & Cloud DevOps Engineer
+Main Responsibility: IAM Risk Posture, Least-Privilege Policies, Remediation Safeguards & Containerization
+AWS Components: AWS IAM, AWS STS (Caller Identity), Scoped IAM Policies, Docker, EC2 Deployment Automation
 
 1. What the Member Worked On:
-   - Implemented the principle of least privilege across all AWS Identity and Access Management 
-     (IAM) users, roles, and instance profiles.
-   - Architected defense-in-depth network security through stateful Security Groups and stateless NACLs.
-   - Configured AWS Web Application Firewall (WAFv2) rules to protect web entry points from SQLi, 
-     XSS, and malicious botnet traffic.
-   - Established automated CI/CD deployment pipelines and SSL/TLS certificate provisioning via ACM.
+   - Engineered the live IAM security audit engine evaluating root credential exposure, multi-key violations, and wildcard policies.
+   - Authored the customer-managed `AutoSOC-Operator-Policy` defining least-privilege telemetry read and gated remediation actions.
+   - Built the multi-stage Docker container pipeline and automated EC2 host deployment script.
 
 2. What They Created:
-   - Scoped IAM Policies and Roles (such as `AutoSOC-Operator-Policy` and `AutoSOC-EC2-Role`), 
-     enabling passwordless, keyless authentication via AWS IMDSv2.
-   - Tiered Security Groups enforcing strict ingress/egress rules between ALB, EC2, and RDS.
-   - WAF Web ACLs containing AWS Managed Rule sets and dynamic IPSets for rapid edge blocking.
-   - Automated CI/CD pipelines (GitHub Actions / Docker Compose) running automated tests, linter checks, 
-     and deployment scripts (`deploy-ec2.sh`).
-   - ACM TLS certificates for custom domain HTTPS encryption.
+   - IAM Risk Analyzer (`src/lib/aws/iam.ts`) auditing CIS Benchmark 1.4 (Root Access Keys), CIS 1.13 (Multiple Active Keys per User), CIS 1.14 (Key Age & Rotation), and CIS 1.16 (Wildcard Administrator Policies).
+   - The `IAM_ACCESS_KEY_DEACTIVATION` playbook in `src/lib/playbooks/catalog.ts` using `iam:UpdateAccessKey` to immediately revoke compromised API credentials.
+   - AWS STS credential provider (`src/lib/aws/credentials.ts`) verifying live operator identity via `sts:GetCallerIdentity`.
+   - Multi-stage production `Dockerfile` (deps -> builder -> runner with non-root security), `docker-compose.yml`, and `deploy-ec2.sh`.
 
 3. Operational Use & Integration with AutoSOC:
-   - Member 5's security definitions are actively audited and manipulated by AutoSOC:
-     * The AutoSOC IAM Risk Analyzer (`/iam-risk`) audits Member 5's IAM estate to flag wildcard 
-       admin policies and unused credentials.
-     * When credential theft occurs, AutoSOC triggers the "IAM Access Key Deactivation" playbook 
-       (`IAM_ACCESS_KEY_DEACTIVATION`).
-     * When external malicious IPs are detected, AutoSOC triggers the "WAF IP Reputation Block" 
-       playbook (`WAF_IP_REPUTATION_BLOCK`) to block traffic at the AWS edge.
+   - Enables AutoSOC to verify caller authenticity and enforce strict human-in-the-loop approvals before executing destructive remediation actions.
+   - Rapidly revokes stolen or compromised IAM access keys during active account compromise incidents.
 
 --------------------------------------------------------------------------------
-MEMBER 6: 📊 Reliability & Testing Engineer
+MEMBER 6: 🧠 AI Intelligence, Compliance & Reliability Testing Engineer
 --------------------------------------------------------------------------------
-Role: Reliability & Testing Engineer
-Main Responsibility: Monitoring, Auto-Scaling, Notification & Rigorous Testing
-AWS Components: Application Load Balancer (ALB), Auto Scaling Groups (ASG), CloudWatch, Amazon SNS
+Role: AI Intelligence, Compliance & Reliability Testing Engineer
+Main Responsibility: Autonomous AI Copilot, CloudTrail Forensics, CIS/NIST Compliance & Vitest Test Suites
+AWS Components: Amazon Bedrock / Groq Cloud LLM, AWS CloudTrail, AWS Config Rules, Vitest Automated Test Suite
 
 1. What the Member Worked On:
-   - Implemented high availability, fault tolerance, and automated load balancing across EC2 instances.
-   - Configured centralized CloudWatch metric alarms, dashboarding, and log group streaming.
-   - Established Amazon Simple Notification Service (SNS) alerting topics for urgent incident notification.
-   - Authored the automated end-to-end testing and load testing suites.
+   - Integrated the autonomous AI investigation copilot powered by Claude 3 Sonnet / Groq Qwen with built-in prompt-injection defenses.
+   - Built live AWS CloudTrail forensic event ingestion and AWS Config rule compliance monitoring.
+   - Authored the comprehensive 31-test automated unit and integration testing suite.
 
 2. What They Created:
-   - Internet-facing Application Load Balancer (ALB) distributing inbound HTTP/HTTPS traffic across 
-     multiple availability zones with health check routing.
-   - Auto Scaling Group (ASG) policies automatically scaling EC2 instance counts up or down based on 
-     CPU utilization and request count.
-   - CloudWatch Alarms monitoring CPU spikes, HTTP 5xx error rates, disk utilization, and network anomalies.
-   - Amazon SNS topics routing critical alerts directly to SecOps email and Slack/PagerDuty channels.
-   - Automated Vitest test suites (31 passed tests) validating security boundaries, secret redaction, 
-     and dry-run safety gates.
+   - AI Investigation Engine (`src/lib/ai/bedrock.ts`) performing automated root-cause analysis, MITRE ATT&CK technique mapping, and remediation planning with regex-based prompt-injection filters.
+   - CloudTrail Forensic Ingestion (`src/lib/aws/cloudtrail.ts`) querying management events via `cloudtrail:LookupEvents`.
+   - Compliance Framework Engine (`src/lib/aws/compliance.ts` and `src/lib/aws/config.ts`) mapping controls to CIS AWS Foundations Benchmark v3.0, NIST CSF 2.0, and ISO/IEC 27001.
+   - 31 automated Vitest tests (`src/test/security.test.ts`, `src/test/config-integration.test.ts`, `src/test/integration-workflow.test.ts`) validating safety gates, approval barriers, and audit integrity.
 
 3. Operational Use & Integration with AutoSOC:
-   - Ensures AutoSOC and the monitored workload maintain 99.99% uptime and elasticity under high load.
-   - AutoSOC ingests CloudWatch and SNS signals to trigger proactive alerts.
-   - The dry-run simulation engine verifies health check targets on Member 6's ALB to guarantee that 
-     isolating a malicious instance will not break upstream load balancer availability.
+   - Provides plain-English incident summaries and step-by-step remediation guidance to junior analysts during triage.
+   - Guarantees 100% test passing (31/31) and software stability across the entire AutoSOC platform.
 
 ================================================================================
 END OF SPECIFICATION FILE
