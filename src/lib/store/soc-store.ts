@@ -242,6 +242,79 @@ export function updateIncidentStatus(
   return incident;
 }
 
+export function resolveIncidentByRemediation(
+  incidentId: string,
+  targetResource: string,
+  playbookId: string,
+  actor: string
+): Incident | null {
+  const now = new Date().toISOString();
+  let incident = memoryIncidents.find((inc) => inc.id === incidentId);
+
+  if (!incident) {
+    incident = memoryIncidents.find(
+      (inc) =>
+        inc.affectedResources?.some((r) => r.id === targetResource || targetResource.includes(r.id)) ||
+        inc.findingIds?.includes(incidentId)
+    );
+  }
+
+  if (!incident && (incidentId === "INC-MANUAL-ACTION" || incidentId === "INC-MANUAL-PLAYBOOK")) {
+    if (playbookId.includes("EC2")) {
+      incident = memoryIncidents.find(
+        (inc) => inc.status !== "CONTAINED" && inc.status !== "CLOSED" && inc.title.toLowerCase().includes("ec2")
+      );
+    } else if (playbookId.includes("IAM")) {
+      incident = memoryIncidents.find(
+        (inc) => inc.status !== "CONTAINED" && inc.status !== "CLOSED" && inc.title.toLowerCase().includes("iam")
+      );
+    } else if (playbookId.includes("S3")) {
+      incident = memoryIncidents.find(
+        (inc) => inc.status !== "CONTAINED" && inc.status !== "CLOSED" && inc.title.toLowerCase().includes("s3")
+      );
+    } else {
+      incident = memoryIncidents.find((inc) => inc.status !== "CONTAINED" && inc.status !== "CLOSED");
+    }
+  }
+
+  if (incident) {
+    incident.status = "CONTAINED";
+    incident.updatedAt = now;
+    incident.responseState = {
+      dryRunExecuted: true,
+      approvalGranted: true,
+      executionStatus: "SUCCESS",
+    };
+    incident.timeline.push({
+      id: `tl-remed-${Date.now()}`,
+      timestamp: now,
+      title: `Remediation Playbook Executed: ${playbookId}`,
+      description: `Playbook '${playbookId}' executed on target '${targetResource}' by analyst '${actor}'. Threat contained.`,
+      actor,
+      source: "AutoSOC-RemediationEngine",
+      type: "ACTION",
+    });
+
+    const memoryFindingsList = globalStore._autoSocMemoryFindings || [];
+    for (const f of memoryFindingsList) {
+      if (incident.findingIds.includes(f.id) || f.resources.some((r) => r.id === targetResource)) {
+        f.status = "RESOLVED";
+      }
+    }
+    if (globalStore._autoSocCachedFindings?.findings) {
+      for (const f of globalStore._autoSocCachedFindings.findings) {
+        if (incident.findingIds.includes(f.id) || f.resources.some((r) => r.id === targetResource)) {
+          f.status = "RESOLVED";
+        }
+      }
+    }
+
+    return incident;
+  }
+
+  return null;
+}
+
 export function addIncidentNote(
   incidentId: string,
   author: string,

@@ -133,10 +133,10 @@ export default function PlaybooksCatalogPage() {
                       setSelectedPlaybookId(pb.id);
                       setDryRunResult(null);
                       setExecutedAction(null);
-                      if (pb.targetService === "EC2") setTargetResource("i-0123456789abcdef0");
+                      if (pb.targetService === "EC2") setTargetResource("i-0a81f33b1e");
                       else if (pb.targetService === "S3") setTargetResource("autosoc-audit-941905484053");
-                      else if (pb.targetService === "IAM") setTargetResource("AKIA5WTPRDEKVNPQMDYX");
-                      else if (pb.targetService === "WAFv2") setTargetResource("203.0.113.88");
+                      else if (pb.targetService === "IAM") setTargetResource("AKIAIOSFODNN7EXAMPLE");
+                      else if (pb.targetService === "WAFv2") setTargetResource("198.51.100.42");
                     }}
                     className={`p-4 border cursor-pointer transition-all ${
                       isSelected
@@ -304,19 +304,36 @@ export default function PlaybooksCatalogPage() {
                   </div>
                 )}
 
-                {/* Execution Success Banner */}
+                {/* Execution Success / Resolution Banner */}
                 {executedAction && (
-                  <div className="p-4 bg-lime-950 border border-lime-500 space-y-2">
-                    <div className="flex items-center gap-2 text-lime-400 font-bold">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>REMEDIATION AUDITED & APPLIED</span>
+                  <div
+                    className={`p-4 border space-y-2 ${
+                      executedAction.executionStatus === "SUCCESS"
+                        ? "bg-lime-950/80 border-lime-500 text-lime-400"
+                        : "bg-[#2E1111] border-[#FF4747] text-[#FF8585]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold text-xs">
+                      {executedAction.executionStatus === "SUCCESS" ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 text-lime-400" />
+                          <span className="text-lime-400">REMEDIATION AUDITED & APPLIED (RESOLVED)</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="w-4 h-4 text-[#FF4747]" />
+                          <span className="text-[#FF8585]">EXECUTION ATTEMPT RECORDED</span>
+                        </>
+                      )}
                     </div>
                     <p className="text-[11px] text-ivory-200">
                       {executedAction.resultSummary}
                     </p>
-                    <div className="text-[10px] text-ivory-400 flex justify-between pt-1 border-t border-lime-900">
+                    <div className="text-[10px] text-ivory-400 flex justify-between pt-1 border-t border-charcoal-700">
                       <span>AWS Req ID: {executedAction.awsRequestId}</span>
-                      <span>Outcome: {executedAction.executionStatus}</span>
+                      <span className={executedAction.executionStatus === "SUCCESS" ? "text-lime-400 font-bold" : "text-[#FF8585] font-bold"}>
+                        Outcome: {executedAction.executionStatus}
+                      </span>
                     </div>
                   </div>
                 )}

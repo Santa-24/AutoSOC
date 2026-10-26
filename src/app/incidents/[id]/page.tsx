@@ -196,6 +196,35 @@ export default function IncidentDetailPage() {
       const action = await res.json();
       setExecutedAction(action);
       setIsConfirmModalOpen(false);
+
+      if (action.executionStatus === "SUCCESS") {
+        setIncident((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: "CONTAINED",
+                updatedAt: new Date().toISOString(),
+                responseState: {
+                  ...prev.responseState,
+                  executionStatus: "SUCCESS",
+                  approvalGranted: true,
+                  dryRunExecuted: true,
+                },
+                timeline: [
+                  ...prev.timeline,
+                  {
+                    id: `tl-remed-${Date.now()}`,
+                    timestamp: new Date().toISOString(),
+                    title: `Remediation Playbook Executed: ${selectedPlaybook}`,
+                    description: action.resultSummary || "Incident successfully contained.",
+                    source: "AutoSOC-RemediationEngine",
+                    type: "ACTION",
+                  },
+                ],
+              }
+            : null
+        );
+      }
     } catch (err) {
       console.error(err);
     } finally {

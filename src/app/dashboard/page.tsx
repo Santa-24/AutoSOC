@@ -30,14 +30,25 @@ export default async function DashboardPage() {
   const health = await getAggregatedHealthStatus();
   const recentAudit = getAuditEvents({ limit: 5 });
 
-  const criticalCount = findings.filter((f) => f.severity === "CRITICAL").length;
-  const highCount = findings.filter((f) => f.severity === "HIGH").length;
-  const mediumCount = findings.filter((f) => f.severity === "MEDIUM").length;
+  const activeIncidents = incidents.filter(
+    (i) => i.status !== "CONTAINED" && i.status !== "CLOSED"
+  );
+  const unresolvedFindings = findings.filter((f) => f.status !== "RESOLVED");
+
+  const criticalCount = unresolvedFindings.filter((f) => f.severity === "CRITICAL").length;
+  const highCount = unresolvedFindings.filter((f) => f.severity === "HIGH").length;
+  const mediumCount = unresolvedFindings.filter((f) => f.severity === "MEDIUM").length;
 
   const isNominal = criticalCount === 0 && highCount === 0;
-  const riskIndex = isNominal ? (findings.length === 0 ? "8 / 100" : "24 / 100") : `${Math.min(95, 25 + criticalCount * 30 + highCount * 15)} / 100`;
+  const riskIndex = isNominal
+    ? activeIncidents.length === 0
+      ? "8 / 100"
+      : "24 / 100"
+    : `${Math.min(95, 25 + criticalCount * 30 + highCount * 15)} / 100`;
   const riskSubtitle = isNominal
-    ? "Low Risk (Environment Secure)"
+    ? activeIncidents.length === 0
+      ? "Low Risk (All Threats Contained & Environment Secure)"
+      : "Low Risk (Environment Secure)"
     : `Elevated Risk (${criticalCount} critical, ${highCount} high)`;
 
   return (
@@ -87,13 +98,13 @@ export default async function DashboardPage() {
           />
           <MetricCard
             label="Active Correlated Incidents"
-            value={incidents.length}
-            subtitle={incidents.length === 0 ? "Zero threats active" : `${incidents.length} awaiting response`}
-            change={incidents.length === 0 ? "Optimal" : "Requires Action"}
-            changeType={incidents.length === 0 ? "positive" : "negative"}
-            sparklineData={incidents.length === 0 ? [0, 0, 0, 0, 0, 0, 0] : [1, 1, 2, 1, 2, 2, 2]}
-            sparklineColor={incidents.length === 0 ? "lime" : "alert"}
-            icon={<AlertOctagon className={`w-4 h-4 ${incidents.length === 0 ? "text-lime-400" : "text-[#FFA066]"}`} />}
+            value={activeIncidents.length}
+            subtitle={activeIncidents.length === 0 ? "Zero threats active (All Contained)" : `${activeIncidents.length} awaiting response`}
+            change={activeIncidents.length === 0 ? "Optimal" : "Requires Action"}
+            changeType={activeIncidents.length === 0 ? "positive" : "negative"}
+            sparklineData={activeIncidents.length === 0 ? [0, 0, 0, 0, 0, 0, 0] : [1, 1, 2, 1, 2, 2, 2]}
+            sparklineColor={activeIncidents.length === 0 ? "lime" : "alert"}
+            icon={<AlertOctagon className={`w-4 h-4 ${activeIncidents.length === 0 ? "text-lime-400" : "text-[#FFA066]"}`} />}
           />
           <MetricCard
             label="Ingested Telemetry Findings"

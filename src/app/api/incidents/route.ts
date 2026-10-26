@@ -6,10 +6,13 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const incidents = await getAllIncidents();
+    const activeIncidents = incidents.filter(
+      (i) => i.status !== "CONTAINED" && i.status !== "CLOSED"
+    );
     return NextResponse.json(
       {
         incidents,
-        count: incidents.length,
+        count: activeIncidents.length,
         isDemoMode: isDemoModeActive(),
       },
       { status: 200 }
