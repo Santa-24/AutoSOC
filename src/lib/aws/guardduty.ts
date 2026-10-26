@@ -136,8 +136,7 @@ export async function fetchLiveGuardDutyFindings(): Promise<SecurityFinding[]> {
         isDemo: false,
       };
     });
-  } catch (err) {
-    console.error("[AutoSOC] Failed to fetch GuardDuty findings:", err);
+  } catch {
     return [];
   }
 }

@@ -105,8 +105,7 @@ export async function fetchLiveSecurityHubFindings(): Promise<SecurityFinding[]>
         isDemo: false,
       };
     });
-  } catch (err) {
-    console.error("[AutoSOC] Failed to fetch Security Hub findings:", err);
+  } catch {
     return [];
   }
 }
