@@ -15,9 +15,17 @@ import { fetchLiveIAMRisks, fetchLiveIAMFindings } from "@/lib/aws/iam";
 import { fetchLiveS3Findings } from "@/lib/aws/s3";
 import { fetchLiveComplianceControls } from "@/lib/aws/compliance";
 
-// Mutable in-memory store for active session state (simulates DynamoDB incident persistence)
-let memoryIncidents: Incident[] = [];
-let memoryFindings: SecurityFinding[] = [];
+// Global store cache for fast Next.js dev server responses
+const globalStore = globalThis as unknown as {
+  _autoSocCachedFindings?: { findings: SecurityFinding[]; timestamp: number };
+  _autoSocMemoryIncidents?: Incident[];
+  _autoSocMemoryFindings?: SecurityFinding[];
+};
+
+if (!globalStore._autoSocMemoryIncidents) globalStore._autoSocMemoryIncidents = [];
+if (!globalStore._autoSocMemoryFindings) globalStore._autoSocMemoryFindings = [];
+
+const FINDINGS_CACHE_TTL_MS = 20000; // 20s live cache
 
 export function isDemoModeActive(): boolean {
   return false;
@@ -27,64 +35,54 @@ export function setDemoModeRuntimeOverride(_active: boolean) {
   // Demo mode is permanently disabled
 }
 
-export async function getAllSecurityFindings(): Promise<SecurityFinding[]> {
+export async function getAllSecurityFindings(forceRefresh = false): Promise<SecurityFinding[]> {
+  const now = Date.now();
+  if (
+    !forceRefresh &&
+    globalStore._autoSocCachedFindings &&
+    now - globalStore._autoSocCachedFindings.timestamp < FINDINGS_CACHE_TTL_MS
+  ) {
+    return globalStore._autoSocCachedFindings.findings;
+  }
+
   const env = getEnv();
   const liveFindings: SecurityFinding[] = [];
 
-  // 1. Audit live IAM posture (root access keys, active user access keys, rotation)
-  try {
-    const iamFindings = await fetchLiveIAMFindings();
-    liveFindings.push(...iamFindings);
-  } catch (err) {
-    console.warn("[AutoSOC Store] IAM findings fetch failed:", err);
-  }
+  const tasks: Promise<SecurityFinding[]>[] = [
+    fetchLiveIAMFindings().catch(() => []),
+    fetchLiveS3Findings().catch(() => []),
+  ];
 
-  // 2. Audit live S3 bucket security posture (encryption, public access blocks)
-  try {
-    const s3Findings = await fetchLiveS3Findings();
-    liveFindings.push(...s3Findings);
-  } catch (err) {
-    console.warn("[AutoSOC Store] S3 findings fetch failed:", err);
-  }
-
-  // 3. Ingest live CloudTrail events if enabled
   if (env.AUTOSOC_ENABLE_CLOUDTRAIL) {
-    try {
-      const ctFindings = await fetchLiveCloudTrailFindings();
-      liveFindings.push(...ctFindings);
-    } catch (err) {
-      console.warn("[AutoSOC Store] CloudTrail findings fetch failed:", err);
-    }
+    tasks.push(fetchLiveCloudTrailFindings().catch(() => []));
   }
-
-  // 4. Optional Cloud Security services
   if (env.AUTOSOC_ENABLE_SECURITY_HUB) {
-    try {
-      const hubFindings = await fetchLiveSecurityHubFindings();
-      liveFindings.push(...hubFindings);
-    } catch (err) {
-      console.warn("[AutoSOC Store] SecurityHub findings fetch failed:", err);
-    }
+    tasks.push(fetchLiveSecurityHubFindings().catch(() => []));
   }
   if (env.AUTOSOC_ENABLE_GUARDDUTY) {
-    try {
-      const gdFindings = await fetchLiveGuardDutyFindings();
-      liveFindings.push(...gdFindings);
-    } catch (err) {
-      console.warn("[AutoSOC Store] GuardDuty findings fetch failed:", err);
-    }
+    tasks.push(fetchLiveGuardDutyFindings().catch(() => []));
   }
   if (env.AUTOSOC_ENABLE_CONFIG) {
-    try {
-      const configFindings = await fetchLiveConfigFindings();
-      liveFindings.push(...configFindings);
-    } catch (err) {
-      console.warn("[AutoSOC Store] Config findings fetch failed:", err);
+    tasks.push(fetchLiveConfigFindings().catch(() => []));
+  }
+
+  const results = await Promise.allSettled(tasks);
+  for (const r of results) {
+    if (r.status === "fulfilled") {
+      liveFindings.push(...r.value);
     }
   }
 
-  const validMemoryFindings = memoryFindings.filter((f) => !f.isDemo);
-  return [...liveFindings, ...validMemoryFindings];
+  const memoryList = globalStore._autoSocMemoryFindings || [];
+  const validMemoryFindings = memoryList.filter((f) => !f.isDemo);
+  const totalFindings = [...liveFindings, ...validMemoryFindings];
+
+  globalStore._autoSocCachedFindings = {
+    findings: totalFindings,
+    timestamp: now,
+  };
+
+  return totalFindings;
 }
 
 export async function getAllIncidents(): Promise<Incident[]> {

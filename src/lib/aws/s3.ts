@@ -23,22 +23,31 @@ export async function fetchLiveS3Findings(): Promise<SecurityFinding[]> {
       credentials: getAWSCredentialsProvider(),
     });
 
-    const listRes = await s3Client.send(new ListBucketsCommand({}));
-    const buckets = listRes.Buckets || [];
+    let bucketItems: { name: string; creationDate?: Date }[] = [];
+    try {
+      const listRes = await s3Client.send(new ListBucketsCommand({}));
+      bucketItems = (listRes.Buckets || [])
+        .filter((b) => b.Name)
+        .map((b) => ({ name: b.Name!, creationDate: b.CreationDate }));
+    } catch {
+      const fallback = env.AUTOSOC_AUDIT_BUCKET || `autosoc-audit-${accountId}`;
+      bucketItems = [{ name: fallback }];
+    }
+
     const findings: SecurityFinding[] = [];
 
-    for (const bucket of buckets) {
-      const bucketName = bucket.Name;
-      if (!bucketName) continue;
+    const auditBucket = async (bucket: { name: string; creationDate?: Date }): Promise<SecurityFinding[]> => {
+      const bucketName = bucket.name;
+      if (!bucketName) return [];
+      const bucketFindings: SecurityFinding[] = [];
 
-      let publicBlockConfig = null;
       try {
         const pabRes = await s3Client.send(
           new GetPublicAccessBlockCommand({ Bucket: bucketName })
         );
-        publicBlockConfig = pabRes.PublicAccessBlockConfiguration;
+        const publicBlockConfig = pabRes.PublicAccessBlockConfiguration;
         if (publicBlockConfig) {
-          findings.push({
+          bucketFindings.push({
             id: `s3-posture-${bucketName}`,
             source: "S3",
             title: `S3 Posture Audit: ${bucketName} (Public Access Block Active)`,
@@ -56,7 +65,7 @@ export async function fetchLiveS3Findings(): Promise<SecurityFinding[]> {
                 accountId,
               },
             ],
-            createdAt: bucket.CreationDate ? bucket.CreationDate.toISOString() : now,
+            createdAt: bucket.creationDate ? bucket.creationDate.toISOString() : now,
             updatedAt: now,
             evidenceReferences: [
               `Bucket Name: ${bucketName}`,
@@ -70,40 +79,42 @@ export async function fetchLiveS3Findings(): Promise<SecurityFinding[]> {
             isDemo: false,
           });
         }
-      } catch (pabErr) {
-        // Missing Public Access Block is a serious finding
-        findings.push({
-          id: `s3-pab-missing-${bucketName}`,
-          source: "S3",
-          title: `S3 Bucket Public Access Block Not Configured: ${bucketName}`,
-          description: `Bucket '${bucketName}' does not have S3 Block Public Access enabled. Violates CIS AWS Foundations Benchmark 2.3.`,
-          severity: "HIGH",
-          status: "ACTIVE",
-          accountId,
-          region,
-          resources: [
-            {
-              type: "AWS::S3::Bucket",
-              id: bucketName,
-              arn: `arn:aws:s3:::${bucketName}`,
-              region,
-              accountId,
+      } catch (pabErr: unknown) {
+        const errName = (pabErr as { name?: string })?.name;
+        if (errName === "NoSuchPublicAccessBlockConfiguration") {
+          bucketFindings.push({
+            id: `s3-pab-missing-${bucketName}`,
+            source: "S3",
+            title: `S3 Bucket Public Access Block Not Configured: ${bucketName}`,
+            description: `Bucket '${bucketName}' does not have S3 Block Public Access enabled. Violates CIS AWS Foundations Benchmark 2.3.`,
+            severity: "HIGH",
+            status: "ACTIVE",
+            accountId,
+            region,
+            resources: [
+              {
+                type: "AWS::S3::Bucket",
+                id: bucketName,
+                arn: `arn:aws:s3:::${bucketName}`,
+                region,
+                accountId,
+              },
+            ],
+            createdAt: bucket.creationDate ? bucket.creationDate.toISOString() : now,
+            updatedAt: now,
+            evidenceReferences: [
+              `Bucket Name: ${bucketName}`,
+              "Status: PublicAccessBlockMissing",
+              "Recommendation: Enable S3_BLOCK_PUBLIC_ACCESS playbook",
+            ],
+            complianceFrameworks: ["CIS AWS Foundations v3.0 (2.3)", "NIST CSF 2.0"],
+            tags: {
+              BucketName: bucketName,
+              Risk: "Unrestricted Public Access Exposure",
             },
-          ],
-          createdAt: bucket.CreationDate ? bucket.CreationDate.toISOString() : now,
-          updatedAt: now,
-          evidenceReferences: [
-            `Bucket Name: ${bucketName}`,
-            "Status: PublicAccessBlockMissing",
-            "Recommendation: Enable S3_BLOCK_PUBLIC_ACCESS playbook",
-          ],
-          complianceFrameworks: ["CIS AWS Foundations v3.0 (2.3)", "NIST CSF 2.0"],
-          tags: {
-            BucketName: bucketName,
-            Risk: "Unrestricted Public Access Exposure",
-          },
-          isDemo: false,
-        });
+            isDemo: false,
+          });
+        }
       }
 
       // Check encryption
@@ -111,38 +122,49 @@ export async function fetchLiveS3Findings(): Promise<SecurityFinding[]> {
         await s3Client.send(
           new GetBucketEncryptionCommand({ Bucket: bucketName })
         );
-      } catch {
-        findings.push({
-          id: `s3-unencrypted-${bucketName}`,
-          source: "S3",
-          title: `S3 Default Encryption Not Configured: ${bucketName}`,
-          description: `Bucket '${bucketName}' does not have default server-side encryption (SSE-KMS or SSE-S3) enabled.`,
-          severity: "MEDIUM",
-          status: "ACTIVE",
-          accountId,
-          region,
-          resources: [
-            {
-              type: "AWS::S3::Bucket",
-              id: bucketName,
-              arn: `arn:aws:s3:::${bucketName}`,
-              region,
-              accountId,
-            },
-          ],
-          createdAt: now,
-          updatedAt: now,
-          evidenceReferences: [`Bucket Name: ${bucketName}`, "Missing Server-Side Encryption"],
-          complianceFrameworks: ["CIS AWS Foundations v3.0 (2.7)"],
-          tags: { BucketName: bucketName },
-          isDemo: false,
-        });
+      } catch (encErr: unknown) {
+        const errName = (encErr as { name?: string })?.name;
+        if (errName === "ServerSideEncryptionConfigurationNotFoundError") {
+          bucketFindings.push({
+            id: `s3-unencrypted-${bucketName}`,
+            source: "S3",
+            title: `S3 Default Encryption Not Configured: ${bucketName}`,
+            description: `Bucket '${bucketName}' does not have default server-side encryption (SSE-KMS or SSE-S3) enabled.`,
+            severity: "MEDIUM",
+            status: "ACTIVE",
+            accountId,
+            region,
+            resources: [
+              {
+                type: "AWS::S3::Bucket",
+                id: bucketName,
+                arn: `arn:aws:s3:::${bucketName}`,
+                region,
+                accountId,
+              },
+            ],
+            createdAt: now,
+            updatedAt: now,
+            evidenceReferences: [`Bucket Name: ${bucketName}`, "Missing Server-Side Encryption"],
+            complianceFrameworks: ["CIS AWS Foundations v3.0 (2.7)"],
+            tags: { BucketName: bucketName },
+            isDemo: false,
+          });
+        }
+      }
+
+      return bucketFindings;
+    };
+
+    const results = await Promise.allSettled(bucketItems.map(auditBucket));
+    for (const r of results) {
+      if (r.status === "fulfilled") {
+        findings.push(...r.value);
       }
     }
 
     return findings;
-  } catch (err) {
-    console.error("[AutoSOC S3] Failed to audit S3 buckets:", err);
+  } catch {
     return [];
   }
 }
