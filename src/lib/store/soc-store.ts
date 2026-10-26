@@ -25,6 +25,10 @@ const globalStore = globalThis as unknown as {
 if (!globalStore._autoSocMemoryIncidents) globalStore._autoSocMemoryIncidents = [];
 if (!globalStore._autoSocMemoryFindings) globalStore._autoSocMemoryFindings = [];
 
+// Shared in-memory references across dev-server requests
+const memoryIncidents: Incident[] = globalStore._autoSocMemoryIncidents;
+const memoryFindings: SecurityFinding[] = globalStore._autoSocMemoryFindings;
+
 const FINDINGS_CACHE_TTL_MS = 20000; // 20s live cache
 
 export function isDemoModeActive(): boolean {
