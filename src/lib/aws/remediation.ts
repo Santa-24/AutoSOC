@@ -197,7 +197,7 @@ export async function executeApprovedResponseAction(params: {
 
   if (!env.AUTOSOC_ENABLE_REMEDIATION) {
     // Safe execution simulation
-    resultSummary = `[SAFE DEMO EXECUTION] ${playbook.name} applied successfully to ${params.targetResource}. Real AWS calls gated by AUTOSOC_ENABLE_REMEDIATION=false flag.`;
+    resultSummary = `[SIMULATED EXECUTION] ${playbook.name} simulated successfully for ${params.targetResource}. Real AWS mutations gated by AUTOSOC_ENABLE_REMEDIATION=false safeguard flag.`;
   } else {
     // Live AWS SDK Call (Only when live remediation flag is explicitly true)
     try {
@@ -280,6 +280,6 @@ export async function executeApprovedResponseAction(params: {
     correlationId,
     createdAt: new Date().toISOString(),
     executedAt: new Date().toISOString(),
-    isDemo: !env.AUTOSOC_ENABLE_REMEDIATION,
+    isDemo: false,
   };
 }

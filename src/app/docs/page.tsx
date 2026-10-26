@@ -32,7 +32,7 @@ export default function DocsPage() {
           </h2>
           <div className="bg-charcoal-950 border border-charcoal-700 p-6 space-y-4 text-xs">
             <p className="text-ivory-300">
-              AutoSOC runs out-of-the-box in Demo Mode without requiring live AWS credentials.
+              AutoSOC connects directly to your live AWS environment using IAM operator credentials.
             </p>
             <pre className="p-4 bg-charcoal-900 border border-charcoal-800 text-lime-400 overflow-x-auto">
 {`# 1. Clone repository & install dependencies
@@ -41,7 +41,7 @@ cd AutoSOC
 npm install
 
 # 2. Copy environment example
-cp .env.example .env.local
+cp .env.example .env
 
 # 3. Launch development server
 npm run dev
@@ -118,6 +118,7 @@ export AWS_PROFILE=default`}
         "cloudtrail:DescribeTrails",
         "cloudtrail:LookupEvents",
         "config:DescribeComplianceByConfigRule",
+        "config:GetComplianceDetailsByConfigRule",
         "inspector2:ListCoverage",
         "inspector2:ListFindings"
       ],

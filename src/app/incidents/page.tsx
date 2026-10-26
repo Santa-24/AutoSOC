@@ -260,7 +260,7 @@ export default function IncidentsPage() {
 
                         {/* Action */}
                         <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                          <Link href="/incidents/INC-2026-9041">
+                          <Link href={`/incidents/${finding.id}`}>
                             <Button variant="secondary" size="sm" className="gap-1 text-[11px] py-1">
                               <span>Triage</span>
                               <ArrowRight className="w-3 h-3" />

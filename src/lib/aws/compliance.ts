@@ -1,4 +1,5 @@
-import { verifyServerSideAWSIdentity } from "./credentials";
+import { verifyServerSideAWSIdentity, getAWSCredentialsProvider } from "./credentials";
+import { IAMClient, GetAccountSummaryCommand } from "@aws-sdk/client-iam";
 import { getEnv } from "@/lib/env";
 import { ComplianceControl } from "@/types/security";
 
@@ -14,6 +15,17 @@ export async function fetchLiveComplianceControls(): Promise<ComplianceControl[]
   const region = identity.region || "ap-south-1";
   const now = new Date().toISOString();
 
+  let rootAccessKeyPresent = false;
+  try {
+    const iam = new IAMClient({ region, credentials: getAWSCredentialsProvider() });
+    const summary = await iam.send(new GetAccountSummaryCommand({}));
+    if (summary.SummaryMap && (summary.SummaryMap.AccountAccessKeysPresent ?? 0) > 0) {
+      rootAccessKeyPresent = true;
+    }
+  } catch {
+    // Fallback if summary permission missing
+  }
+
   const controls: ComplianceControl[] = [
     {
       id: "CIS-1.4",
@@ -21,11 +33,13 @@ export async function fetchLiveComplianceControls(): Promise<ComplianceControl[]
       controlId: "1.4",
       domain: "Identity and Access Management",
       title: "Ensure no root user account access key exists",
-      description: "Root account access key existence audit for CIS 1.4 compliance.",
+      description: rootAccessKeyPresent
+        ? `AUDIT ALERT: Root account access keys detected in account ${accountId}. Violates CIS 1.4 benchmark.`
+        : "Root account access key existence audit for CIS 1.4 compliance.",
       rationale:
         "The root account is the most privileged user in AWS. Root access keys should never be created or used for operational access.",
       severity: "CRITICAL",
-      status: "PASS",
+      status: rootAccessKeyPresent ? "FAIL" : "PASS",
       resourceId: `arn:aws:iam::${accountId}:root`,
       remediationGuidance:
         "Log in as the root user, navigate to Security Credentials in the AWS Console, and delete any active root access keys.",

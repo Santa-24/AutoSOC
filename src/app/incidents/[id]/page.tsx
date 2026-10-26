@@ -35,7 +35,7 @@ export default function IncidentDetailPage() {
 
   // Remediation State
   const [selectedPlaybook, setSelectedPlaybook] = useState<PlaybookId>("S3_BLOCK_PUBLIC_ACCESS");
-  const [targetResource, setTargetResource] = useState("autosoc-audit-941905484053");
+  const [targetResource, setTargetResource] = useState("");
   const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
   const [isDryRunning, setIsDryRunning] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -55,15 +55,88 @@ export default function IncidentDetailPage() {
       .then(([incData, findData]) => {
         if (!mounted) return;
         const incs: Incident[] = incData?.incidents || [];
-        const found = incs.find((i) => i.id === incidentId) || incs[0] || null;
-        setIncident(found);
+        const allFinds: SecurityFinding[] = findData?.findings || [];
+
+        let found = incs.find(
+          (i) => i.id === incidentId || i.findingIds?.includes(incidentId)
+        );
+
+        if (!found && allFinds.length > 0) {
+          const matchingFinding = allFinds.find((f) => f.id === incidentId);
+          if (matchingFinding) {
+            found = {
+              id: `INC-${matchingFinding.id}`,
+              findingIds: [matchingFinding.id],
+              title: `Security Incident: ${matchingFinding.title}`,
+              severity:
+                matchingFinding.severity === "INFORMATIONAL"
+                  ? "LOW"
+                  : matchingFinding.severity,
+              status: matchingFinding.status === "ACTIVE" ? "TRIAGE" : "CLOSED",
+              owner: "secops-oncall@autosoc.corp",
+              summary: matchingFinding.description,
+              affectedResources: matchingFinding.resources,
+              timeline: [
+                {
+                  id: `tl-1`,
+                  timestamp: matchingFinding.createdAt || new Date().toISOString(),
+                  title: "Live finding ingested and correlated",
+                  description: matchingFinding.description,
+                  source: matchingFinding.source,
+                  type: "DETECTION",
+                },
+              ],
+              notes: [],
+              responseState: {
+                dryRunExecuted: false,
+                approvalGranted: false,
+                executionStatus: "IDLE",
+              },
+              createdAt: matchingFinding.createdAt || new Date().toISOString(),
+              updatedAt: matchingFinding.updatedAt || new Date().toISOString(),
+              isDemo: false,
+            };
+          }
+        }
+
+        if (!found && incs.length > 0 && !incidentId) {
+          found = incs[0];
+        }
+
+        setIncident(found || null);
         if (found) {
           setNotes(found.notes || []);
           if (found.affectedResources?.[0]?.id) {
-            setTargetResource(found.affectedResources[0].id);
+            const firstRes = found.affectedResources[0];
+            setTargetResource(firstRes.id);
+            if (
+              firstRes.type.includes("EC2") ||
+              firstRes.type.includes("Instance") ||
+              firstRes.type.includes("SecurityGroup")
+            ) {
+              setSelectedPlaybook("EC2_QUARANTINE_ISOLATION");
+            } else if (
+              firstRes.type.includes("S3") ||
+              firstRes.type.includes("Bucket")
+            ) {
+              setSelectedPlaybook("S3_BLOCK_PUBLIC_ACCESS");
+            } else if (
+              firstRes.type.includes("IAM") ||
+              firstRes.type.includes("Key")
+            ) {
+              setSelectedPlaybook("IAM_ACCESS_KEY_DEACTIVATION");
+            }
           }
-          const allFinds: SecurityFinding[] = findData?.findings || [];
-          setRelatedFindings(allFinds.filter((f) => found.findingIds?.includes(f.id)));
+          setRelatedFindings(
+            allFinds.filter(
+              (f) =>
+                found.findingIds?.includes(f.id) ||
+                f.id === incidentId ||
+                found.affectedResources?.some((r) =>
+                  f.resources?.some((fr) => fr.id === r.id)
+                )
+            )
+          );
         }
       })
       .catch((err) => console.error("Failed to load incident detail:", err))
@@ -171,7 +244,6 @@ export default function IncidentDetailPage() {
                   <h1 className="text-xl sm:text-2xl font-black uppercase text-ivory-100">
                     {incident.id}: {incident.title}
                   </h1>
-                  {incident.isDemo && <DemoTag />}
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -224,9 +296,9 @@ export default function IncidentDetailPage() {
               {incident.summary}
             </p>
             <div className="text-[11px] text-ivory-400 flex items-center gap-4 pt-1 border-t border-charcoal-750">
-              <span>Model: Claude 3 Sonnet (Amazon Bedrock)</span>
-              <span>Confidence: 98%</span>
-              <span>Evidence Pointers: 2 Findings, 1 Flow Log</span>
+              <span>Telemetry: Live AWS Correlation</span>
+              <span>Status: Active Verification</span>
+              <span>Correlated Findings: {relatedFindings.length || incident.findingIds.length}</span>
             </div>
           </div>
 

@@ -88,7 +88,7 @@ export default function IntegrationsPage() {
                     : "bg-[#3D1414] text-[#FF8585] border-[#6E2222]"
                 }`}
               >
-                {health?.awsIdentity.connected ? "STS HEALTHY" : "CREDENTIALS ABSENT (DEMO ACTIVE)"}
+                {health?.awsIdentity.connected ? "STS HEALTHY" : "CREDENTIALS ABSENT"}
               </span>
             </div>
 
@@ -96,7 +96,7 @@ export default function IntegrationsPage() {
               <div>
                 <span className="text-ivory-500 block text-[10px]">ACCOUNT ID:</span>
                 <span className="text-ivory-100 font-bold">
-                  {health?.awsIdentity.accountId || "None (Demo Mode Sandbox)"}
+                  {health?.awsIdentity.accountId || "None"}
                 </span>
               </div>
               <div>
@@ -136,7 +136,7 @@ export default function IntegrationsPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between border-b border-charcoal-750 pb-2">
                     <span className="font-bold text-sm text-ivory-100">
-                      {svc.service}
+                      {svc.service === "Bedrock" ? "Bedrock / Groq Cloud AI" : svc.service}
                     </span>
                     {svc.connected ? (
                       <span className="inline-flex items-center gap-1 text-[10px] text-lime-400 font-bold bg-lime-950 px-1.5 py-0.2 border border-lime-800">

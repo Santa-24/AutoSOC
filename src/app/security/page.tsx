@@ -25,7 +25,7 @@ export default function SecurityPrinciplesPage() {
     {
       num: "04",
       title: "Real Server-Side Health Verification",
-      desc: "An AWS integration is never marked as connected unless a real server-side health check (such as sts:GetCallerIdentity or securityhub:DescribeHub) succeeds. Synthetic data is unmistakably tagged with DEMO DATA banners and can be switched off.",
+      desc: "An AWS integration is never marked as connected unless a real server-side health check (such as sts:GetCallerIdentity or config:DescribeComplianceByConfigRule) succeeds. Live telemetry is parsed in real time directly from your AWS account.",
     },
     {
       num: "05",

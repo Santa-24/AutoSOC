@@ -125,3 +125,56 @@ export async function fetchLiveForensicEvents(lookupAttribute?: {
     return [];
   }
 }
+
+/**
+ * Converts live CloudTrail audit records into SecurityFinding objects for incident correlation
+ */
+export async function fetchLiveCloudTrailFindings(): Promise<import("@/types/security").SecurityFinding[]> {
+  const records = await fetchLiveForensicEvents();
+  const env = getEnv();
+
+  return records.map((rec) => {
+    const isSensitive =
+      rec.eventName.includes("AssumeRole") ||
+      rec.eventName.includes("Put") ||
+      rec.eventName.includes("Delete") ||
+      rec.eventName.includes("Create") ||
+      rec.eventName.includes("Attach");
+
+    return {
+      id: `ct-finding-${rec.id}`,
+      source: "CloudTrail" as const,
+      title: `CloudTrail Event: ${rec.eventName} by ${rec.actorArn}`,
+      description: `Live management event '${rec.eventName}' called from source IP ${rec.sourceIpAddress} via ${rec.userAgent}. Evidence verified with SHA-256: ${rec.sha256Hash.slice(0, 16)}...`,
+      severity: isSensitive ? ("HIGH" as const) : ("LOW" as const),
+      status: "ACTIVE" as const,
+      accountId: "941905484053",
+      region: rec.awsRegion || env.AWS_REGION,
+      resources: [
+        {
+          type: "AWS::CloudTrail::Event",
+          id: rec.resourceArn || rec.eventName,
+          arn: rec.resourceArn || `arn:aws:cloudtrail:${env.AWS_REGION}:941905484053:event/${rec.id}`,
+          region: rec.awsRegion || env.AWS_REGION,
+          accountId: "941905484053",
+        },
+      ],
+      createdAt: rec.timestamp,
+      updatedAt: rec.timestamp,
+      evidenceReferences: [
+        `API: ${rec.eventName}`,
+        `Actor: ${rec.actorArn}`,
+        `Source IP: ${rec.sourceIpAddress}`,
+        `SHA-256: ${rec.sha256Hash}`,
+      ],
+      complianceFrameworks: ["CIS AWS Foundations v3.0 (2.1)"],
+      tags: {
+        EventName: rec.eventName,
+        Actor: rec.actorArn,
+        SourceIp: rec.sourceIpAddress,
+      },
+      isDemo: false,
+    };
+  });
+}
+

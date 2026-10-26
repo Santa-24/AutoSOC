@@ -15,7 +15,7 @@ const envSchema = z.object({
   AUTOSOC_DEMO_MODE: z
     .string()
     .transform((val) => val === "true" || val === "1")
-    .default("true"),
+    .default("false"),
   AUTOSOC_ENABLE_SECURITY_HUB: z
     .string()
     .transform((val) => val === "true" || val === "1")
@@ -67,7 +67,7 @@ export type Env = z.infer<typeof envSchema>;
 let cachedEnv: Env | null = null;
 
 export function getEnv(): Env {
-  if (cachedEnv) return cachedEnv;
+  if (process.env.NODE_ENV === "production" && cachedEnv) return cachedEnv;
 
   const parsed = envSchema.safeParse(process.env);
 
@@ -81,7 +81,7 @@ export function getEnv(): Env {
     // Fall back to safe development defaults
     cachedEnv = envSchema.parse({
       NODE_ENV: process.env.NODE_ENV || "development",
-      AUTOSOC_DEMO_MODE: "true",
+      AUTOSOC_DEMO_MODE: "false",
       AWS_REGION: process.env.AWS_REGION || "ap-south-1",
     });
     return cachedEnv;

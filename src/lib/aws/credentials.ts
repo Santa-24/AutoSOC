@@ -28,9 +28,13 @@ const CACHE_TTL_MS = 30000; // Cache credentials check for 30s to avoid hammerin
 export function getAWSCredentialsProvider() {
   const env = getEnv();
 
-  // 1. Static keys override strictly for local testing fallback
+  // 1. Static keys override strictly from .env
   if (env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY) {
-    return fromEnv();
+    return async () => ({
+      accessKeyId: env.AWS_ACCESS_KEY_ID!,
+      secretAccessKey: env.AWS_SECRET_ACCESS_KEY!,
+      sessionToken: env.AWS_SESSION_TOKEN || undefined,
+    });
   }
 
   // 2. Profile from AWS CLI or IAM Identity Center

@@ -23,6 +23,7 @@ import { PublicFooter } from "@/components/layout/public-footer";
 import { TelemetryTicker } from "@/components/ui/ticker";
 import { ThreatMap } from "@/components/ui/threat-map";
 import { Button } from "@/components/ui/button";
+import { HeroSection } from "@/components/landing/hero-section";
 
 export default function LandingPage() {
   const workflowStages = [
@@ -127,7 +128,7 @@ export default function LandingPage() {
     },
     {
       q: "Can I run AutoSOC locally without incurring any AWS charges?",
-      a: "Yes. AutoSOC boots in Demo Mode by default, populating an isolated synthetic environment with realistic multi-stage incidents, CloudTrail logs, and compliance evaluations, incurring $0.00 in cloud fees.",
+      a: "Yes. AutoSOC operates with non-destructive dry-run simulations and reads live read-only telemetry by default, incurring zero mutating cloud charges.",
     },
   ];
 
@@ -135,108 +136,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-charcoal-900 text-ivory-100 flex flex-col selection:bg-lime-500 selection:text-charcoal-950">
       <PublicNav />
 
-      {/* Hero Section: Editorial Swiss Brutalism */}
-      <section className="relative pt-16 pb-20 md:pt-24 md:pb-28 border-b border-charcoal-700 bg-grid-cyber overflow-hidden">
-        {/* Glow ambient focal accent */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-lime-500/5 blur-[120px] rounded-full pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="flex flex-col lg:flex-row items-start justify-between gap-12">
-            {/* Left Headline */}
-            <div className="max-w-3xl space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-charcoal-850 border border-charcoal-700 text-xs font-mono">
-                <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
-                <span className="text-lime-400 font-bold uppercase tracking-widest">
-                  Autonomous SecOps
-                </span>
-                <span className="text-ivory-500">|</span>
-                <span className="text-ivory-300">AWS Cloud Defense</span>
-              </div>
-
-              <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold font-mono tracking-tighter uppercase leading-[0.95] text-ivory-100">
-                AI-POWERED <br />
-                <span className="text-lime-500 underline decoration-charcoal-700 decoration-4 underline-offset-8">
-                  AUTONOMOUS
-                </span>{" "}
-                <br />
-                CLOUD SOC.
-              </h1>
-
-              <p className="text-base sm:text-lg text-ivory-300 font-mono leading-relaxed max-w-2xl">
-                AutoSOC closes the gap between cloud alert noise and remediation. Correlates Security Hub, GuardDuty, and CloudTrail telemetry into unified incidents, provides Bedrock-assisted triage, and executes human-authorized playbooks with dry-run safeguards.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-4 pt-4">
-                <Link href="/dashboard">
-                  <Button size="lg" className="gap-2">
-                    <Terminal className="w-4 h-4" />
-                    <span>Launch Analyst Console</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-
-                <Link href="/docs">
-                  <Button variant="secondary" size="lg">
-                    <span>Architecture Docs</span>
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Guardrail badges */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-6 border-t border-charcoal-700/80 text-[11px] font-mono text-ivory-400">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-lime-400 shrink-0" />
-                  <span>Dry-Run Previews</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-lime-400 shrink-0" />
-                  <span>Human-in-the-Loop</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-lime-400 shrink-0" />
-                  <span>Zero Browser Secrets</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Terminal Metric Widget */}
-            <div className="w-full lg:w-96 bg-charcoal-950 border border-charcoal-700 p-5 space-y-4 font-mono text-xs shadow-2xl relative">
-              <div className="flex items-center justify-between border-b border-charcoal-800 pb-3">
-                <span className="text-lime-400 font-bold uppercase tracking-widest text-[10px]">
-                  TELEMETRY ENGINE STATUS
-                </span>
-                <span className="text-[10px] text-ivory-500">REGION: ap-south-1</span>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between items-center py-1 border-b border-charcoal-850">
-                  <span className="text-ivory-400">Mean Time to Correlate</span>
-                  <span className="text-lime-400 font-bold">14.2s</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-charcoal-850">
-                  <span className="text-ivory-400">Active Attack Paths</span>
-                  <span className="text-[#FF8080] font-bold">2 Isolated</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-charcoal-850">
-                  <span className="text-ivory-400">Bedrock AI Grounding</span>
-                  <span className="text-lime-400 font-bold">100% Evidence-Linked</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-charcoal-850">
-                  <span className="text-ivory-400">Remediation Policy</span>
-                  <span className="text-ivory-200 font-bold">Approval-Gated</span>
-                </div>
-              </div>
-
-              <div className="p-3 bg-charcoal-900 border border-charcoal-800 text-[11px] leading-relaxed text-ivory-300">
-                <span className="text-lime-400 font-bold block mb-1">
-                  LAST CORRELATION DETECTED:
-                </span>
-                EC2 reverse-shell beaconing matched with S3 PutBucketPolicy grant to wildcard Principal: *. Blast radius mapped to 1 S3 bucket and 1 IAM role.
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Enhanced Interactive Cyber-Ops Hero Section */}
+      <HeroSection />
 
       {/* Event Telemetry Marquee */}
       <TelemetryTicker />
@@ -405,7 +306,7 @@ export default function LandingPage() {
             TAKE COMMAND OF YOUR AWS THREAT SURFACE.
           </h2>
           <p className="text-sm sm:text-base font-mono font-medium max-w-2xl mx-auto opacity-90">
-            Access the unified analyst command center. Inspect correlated findings, generate dry-run previews, or review compliance mappings immediately in Demo Mode.
+            Access the unified analyst command center. Inspect correlated findings, generate dry-run previews, or review compliance mappings directly from live AWS telemetry.
           </p>
           <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
             <Link href="/dashboard">

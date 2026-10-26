@@ -78,34 +78,24 @@ export default function SettingsPage() {
                   1. Operational Mode Configuration
                 </h2>
                 <p className="text-[11px] text-ivory-400 mt-0.5">
-                  Toggle between isolated synthetic demonstration data and live AWS SDK stream
+                  Real-time AWS telemetry ingestion stream and execution safeguards
                 </p>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-charcoal-900 border border-charcoal-750">
                 <div>
                   <span className="font-bold text-ivory-200 block text-xs">
-                    Synthetic Demo Data Mode (AUTOSOC_DEMO_MODE)
+                    Live Telemetry Ingestion Engine
                   </span>
                   <p className="text-[11px] text-ivory-400 mt-0.5">
-                    When enabled, AutoSOC displays pre-loaded multi-stage attack scenarios without requiring live AWS credentials.
+                    AutoSOC is operating directly against configured AWS cloud infrastructure (ap-south-1).
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setDemoMode(!demoMode)}
-                  className="flex items-center gap-1.5 px-3 py-1 bg-charcoal-800 border border-charcoal-700 text-xs"
-                >
-                  {demoMode ? (
-                    <ToggleRight className="w-5 h-5 text-lime-400" />
-                  ) : (
-                    <ToggleLeft className="w-5 h-5 text-ivory-500" />
-                  )}
-                  <span className="text-[11px] text-ivory-200">
-                    {demoMode ? "ACTIVE (DEMO)" : "LIVE AWS ONLY"}
-                  </span>
-                </button>
+                <div className="flex items-center gap-2 px-3 py-1 bg-lime-950 border border-lime-800 text-xs font-bold text-lime-400">
+                  <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
+                  <span>LIVE AWS ONLY</span>
+                </div>
               </div>
             </div>
 

@@ -120,7 +120,7 @@ See [`SECURITY.md`](SECURITY.md) for the vulnerability disclosure policy.
 git clone https://github.com/Santa-24/AutoSOC.git
 cd AutoSOC
 npm install
-cp .env.example .env.local     # Demo Mode works with defaults
+cp .env.example .env           # Demo Mode works with defaults
 npm run dev
 ```
 
@@ -128,7 +128,7 @@ Open <http://localhost:3000>.
 
 ### Switching to live AWS data
 
-Fill in the AWS values in `.env.local` and restart. Use an identity with **read-only** permissions (for example, the managed `SecurityAudit` policy). The Integrations page reports real connection health from server-side STS checks.
+Fill in the AWS values in `.env` and restart. Use an identity with **read-only** permissions (for example, the managed `SecurityAudit` policy). The Integrations page reports real connection health from server-side STS checks.
 
 ---
 

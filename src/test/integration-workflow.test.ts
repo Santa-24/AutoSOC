@@ -134,7 +134,7 @@ describe("AutoSOC Workflow & Integration Architecture", () => {
 
       expect(result.executionStatus).toBe("SUCCESS");
       expect(result.id).toBeDefined();
-      expect(result.resultSummary).toContain("SAFE DEMO EXECUTION");
+      expect(result.resultSummary).toContain("SIMULATED EXECUTION");
 
       const auditRecords = getAuditEvents({
         action: "REMEDIATION_EXECUTED:IAM_ACCESS_KEY_DEACTIVATION",
@@ -145,14 +145,14 @@ describe("AutoSOC Workflow & Integration Architecture", () => {
   });
 
   describe("Environment Validation & Safe Defaults", () => {
-    it("validates environment variables safely with demo defaults", () => {
+    it("validates environment variables safely with live defaults", () => {
       const env = getEnv();
-      expect(env.AUTOSOC_DEMO_MODE).toBe(true);
+      expect(env.AUTOSOC_DEMO_MODE).toBe(false);
       expect(env.AWS_REGION).toBeDefined();
       expect(env.AUTOSOC_ENABLE_REMEDIATION).toBe(false);
 
       const summary = getSafeConfigSummary();
-      expect(summary.demoModeActive).toBe(true);
+      expect(summary.demoModeActive).toBe(false);
       expect(summary.region).toBeDefined();
       expect(summary.servicesConfigured.remediationExecution).toBe(false);
     });

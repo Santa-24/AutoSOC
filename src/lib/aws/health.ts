@@ -83,7 +83,12 @@ export async function getAggregatedHealthStatus(): Promise<SystemHealthReport> {
       account: identity.accountId,
       region: env.AWS_REGION,
       lastCheckedAt: new Date().toISOString(),
-      missingPermissions: configSvc.connected ? [] : ["config:DescribeComplianceByConfigRule"],
+      missingPermissions: configSvc.connected
+        ? []
+        : [
+            "config:DescribeComplianceByConfigRule",
+            "config:GetComplianceDetailsByConfigRule",
+          ],
       errorCode: configSvc.connected ? undefined : "NOT_CONNECTED",
       safeErrorMessage: configSvc.errorMessage,
       costNote: "$0.003 per configuration item recorded.",

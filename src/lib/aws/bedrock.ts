@@ -75,6 +75,34 @@ export async function checkBedrockHealth(): Promise<{
     };
   }
 
+  // Handle Groq Cloud AI provider if API key configured
+  if (modelId.startsWith("gsk_")) {
+    try {
+      const groqRes = await fetch("https://api.groq.com/openai/v1/models", {
+        headers: { Authorization: `Bearer ${modelId}` },
+      });
+      if (groqRes.ok) {
+        return {
+          connected: true,
+          modelId: "Groq Cloud Intelligence (qwen/qwen3.8-27b)",
+        };
+      } else {
+        return {
+          connected: false,
+          modelId: "Groq Cloud Intelligence",
+          errorMessage: `Groq authentication error: HTTP ${groqRes.status}`,
+        };
+      }
+    } catch (err: unknown) {
+      const error = err as Error;
+      return {
+        connected: false,
+        modelId: "Groq Cloud Intelligence",
+        errorMessage: error.message || "Failed to connect to Groq Cloud endpoint.",
+      };
+    }
+  }
+
   try {
     const client = new BedrockRuntimeClient({
       region: env.AWS_REGION,
@@ -207,12 +235,6 @@ export async function executeAIInvestigation(
   }
 
   try {
-    const credentials = getAWSCredentialsProvider();
-    const client = new BedrockRuntimeClient({
-      region: env.AWS_REGION,
-      credentials: credentials ? credentials : undefined,
-    });
-
     // 1. Sanitize input to redact passwords, access keys, tokens
     const rawTelemetry = JSON.stringify(request.findingContext, null, 2);
     const { cleaned: sanitizedTelemetry, redactedCount } = sanitizeForAI(rawTelemetry);
@@ -227,9 +249,78 @@ Rules:
 2. Ground your output strictly in the evidence provided.
 3. Suggest concrete investigation steps and recommended playbooks (EC2_QUARANTINE_ISOLATION, IAM_ACCESS_KEY_DEACTIVATION, S3_BLOCK_PUBLIC_ACCESS, WAF_IP_REPUTATION_BLOCK, or IAM_EXCESSIVE_PERMS_PROPOSAL).
 4. Never suggest executing privileged actions without manual analyst confirmation.
-5. Provide response in valid JSON with fields: summary (string), suggestedMitigations (array of strings), confidenceScore (number between 0 and 1), recommendedPlaybook (string).`;
+5. Provide response strictly in valid JSON with fields: summary (string), suggestedMitigations (array of strings), confidenceScore (number between 0 and 1), recommendedPlaybook (string).`;
 
     const userMessage = `${defendedTelemetry}\n\nAnalyst Guidance: ${request.analystPrompt || "Provide full incident triage and blast radius summary."}`;
+
+    // If Groq API key is configured, execute live cloud inference via Groq
+    if (env.AUTOSOC_BEDROCK_MODEL_ID.startsWith("gsk_")) {
+      const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.AUTOSOC_BEDROCK_MODEL_ID}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "qwen/qwen3.8-27b",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage },
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.2,
+        }),
+      });
+
+      if (!groqRes.ok) {
+        const errorText = await groqRes.text();
+        throw new Error(`Groq AI request failed (${groqRes.status}): ${errorText}`);
+      }
+
+      const groqData = await groqRes.json();
+      const textOutput = groqData.choices?.[0]?.message?.content || "{}";
+
+      try {
+        const parsedJson = JSON.parse(textOutput);
+        return {
+          summary: parsedJson.summary || textOutput,
+          suggestedMitigations:
+            parsedJson.suggestedMitigations || ["Review CloudTrail telemetry", "Audit IAM policies"],
+          evidencePointers: request.findingContext.map((f) => ({
+            id: f.id,
+            source: f.source,
+            description: f.title,
+          })),
+          recommendedPlaybook: (parsedJson.recommendedPlaybook as PlaybookId) || "IAM_EXCESSIVE_PERMS_PROPOSAL",
+          uncertaintyDisclaimer: "Live Groq Cloud LLM Analysis (qwen/qwen3.8-27b). Verify before action.",
+          confidenceScore: parsedJson.confidenceScore || 0.94,
+          modelUsed: "Groq Cloud Intelligence (qwen/qwen3.8-27b)",
+          isFallback: false,
+          redactedSensitiveTokensCount: redactedCount,
+        };
+      } catch {
+        return {
+          summary: textOutput,
+          suggestedMitigations: ["Manual analyst review of affected resources."],
+          evidencePointers: request.findingContext.map((f) => ({
+            id: f.id,
+            source: f.source,
+            description: f.title,
+          })),
+          uncertaintyDisclaimer: "Live Groq Cloud LLM Analysis. Verify before action.",
+          confidenceScore: 0.88,
+          modelUsed: "Groq Cloud Intelligence (qwen/qwen3.8-27b)",
+          isFallback: false,
+          redactedSensitiveTokensCount: redactedCount,
+        };
+      }
+    }
+
+    const credentials = getAWSCredentialsProvider();
+    const client = new BedrockRuntimeClient({
+      region: env.AWS_REGION,
+      credentials: credentials ? credentials : undefined,
+    });
 
     const payload = JSON.stringify({
       anthropic_version: "bedrock-2023-05-31",

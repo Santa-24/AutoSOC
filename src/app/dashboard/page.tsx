@@ -208,7 +208,6 @@ export default async function DashboardPage() {
                         <span className="text-xs font-bold text-ivory-100">
                           {incident.id}
                         </span>
-                        {incident.isDemo && <DemoTag />}
                       </div>
                       <div className="flex items-center gap-2 text-xs">
                         <StatusBadge status={incident.status} />
@@ -283,7 +282,9 @@ export default async function DashboardPage() {
                     key={svc.service}
                     className="flex items-center justify-between py-1 border-b border-charcoal-800 text-[11px]"
                   >
-                    <span className="text-ivory-300">{svc.service}</span>
+                    <span className="text-ivory-300 font-medium">
+                      {svc.service === "Bedrock" ? "Bedrock / Groq AI" : svc.service}
+                    </span>
                     <div className="flex items-center gap-2">
                       {svc.connected ? (
                         <span className="inline-flex items-center gap-1 text-lime-400 font-bold">
@@ -293,7 +294,7 @@ export default async function DashboardPage() {
                       ) : (
                         <span className="inline-flex items-center gap-1 text-ivory-500">
                           <span className="w-1.5 h-1.5 rounded-full bg-charcoal-600" />
-                          DEMO / STANDBY
+                          STANDBY
                         </span>
                       )}
                     </div>
@@ -307,7 +308,7 @@ export default async function DashboardPage() {
                 </span>
                 {health.awsIdentity.connected
                   ? `AWS Account: ${health.awsIdentity.accountId} (${health.awsIdentity.authMethod})`
-                  : "No live AWS credentials detected. Running in Demo Mode."}
+                  : "No live AWS credentials detected. Awaiting configuration."}
               </div>
             </div>
 

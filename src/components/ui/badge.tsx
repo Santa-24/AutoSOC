@@ -99,9 +99,6 @@ export function StatusBadge({ status }: StatusBadgeProps) {
 }
 
 export function DemoTag() {
-  return (
-    <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono tracking-widest uppercase bg-[#2C2E14] text-[#E0E878] border border-[#606622]">
-      DEMO DATA
-    </span>
-  );
+  return null;
 }
+
