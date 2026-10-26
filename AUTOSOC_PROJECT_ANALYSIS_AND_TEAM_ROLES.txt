@@ -260,43 +260,176 @@ DEMO WALKTHROUGH SCRIPT (SHOW THIS TO AUDIENCE / EVALUATORS):
 5. SERVICES & RESOURCES USED TO BUILD THIS PROJECT
 ================================================================================
 
-1. CORE APPLICATION & FRONTEND STACK:
-   - Next.js 14: React framework utilizing the App Router architecture for server components.
-   - React 18: Core UI component library.
-   - TypeScript (Strict Mode): Enforces comprehensive static type safety across telemetry models.
-   - Tailwind CSS: Cyber-ops Swiss-brutalist dark mode interface tailored for mission-critical SOCs.
-   - Lucide React: Iconography library for security operations.
-   - Zod: Runtime schema validation for environment configuration.
-   - Vitest & React Testing Library: Unit, security, and integration testing framework.
+This project integrates 15 AWS services, dedicated live cloud resources, 
+advanced AI inference models, and a modern software development stack. Below is 
+the exhaustive, clear breakdown of all services and resources used.
 
-2. AWS SECURITY & MONITORING SERVICES (INTEGRATED):
-   - AWS Security Hub: Centralized hub for CSPM (Cloud Security Posture Management) compliance findings.
-   - Amazon GuardDuty: Threat intelligence and anomaly detection engine (malicious IP connections, C2).
-   - AWS CloudTrail: Audit trail recording management and data-plane API actions.
-   - AWS Config: Continuous configuration monitoring and compliance rule evaluations.
-   - Amazon Inspector v2: Automated vulnerability assessment for EC2 packages and container images.
+--------------------------------------------------------------------------------
+A. COMPLETE AWS SERVICES BREAKDOWN (15 CONNECTED OPERATIONAL SERVICES)
+--------------------------------------------------------------------------------
 
-3. ARTIFICIAL INTELLIGENCE & LLM:
-   - Amazon Bedrock: Foundation model service running Anthropic Claude 3 Sonnet 
-     (`anthropic.claude-3-sonnet-20240229-v1:0`) for root-cause triage, blast-radius 
-     analysis, and playbook recommendation.
+1. AWS Security Hub (CSPM Finding Aggregator)
+   - Role in Project: Aggregates posture findings across connected security tools.
+   - SDK Client / Commands: SecurityHubClient (`DescribeHubCommand`, `GetFindingsCommand`).
+   - Implementation File: `src/lib/aws/security-hub.ts`.
+   - Live Status: Connected (Flag: AUTOSOC_ENABLE_SECURITY_HUB=true).
 
-4. AWS CORE INFRASTRUCTURE & REMEDIATION RESOURCES:
-   - Amazon EC2: Host infrastructure and remediation target (quarantine isolation via Security Groups).
-   - AWS IAM: Identity provider and remediation target (programmatic deactivation of exposed access keys).
-   - Amazon S3: Forensic evidence storage, CloudTrail log target, and remediation target (Public Access Block).
-   - AWS WAFv2: Edge protection and remediation target (dynamic IPSet blocklist updates).
-   - AWS STS: Security Token Service for caller identity verification and credential health checks.
-   - Amazon DynamoDB: Scalable NoSQL store for incident records and operational telemetry.
-   - AWS KMS: Key Management Service for envelope encryption of audit logs and secrets.
-   - Amazon Cognito: Enterprise user pool and OAuth2/OIDC identity boundary.
+2. Amazon GuardDuty (Threat Intelligence & Anomaly Detection)
+   - Role in Project: Streams anomaly findings, suspicious IP communication, and C2 beacons.
+   - SDK Client / Commands: GuardDutyClient (`ListDetectorsCommand`, `GetFindingsCommand`).
+   - Implementation File: `src/lib/aws/guardduty.ts`.
+   - Live Status: Connected (Flag: AUTOSOC_ENABLE_GUARDDUTY=true).
 
-5. DEVOPS, DEPLOYMENT & NETWORKING:
-   - Docker & Docker Compose: Containerized multi-stage production deployment.
-   - Amazon Linux 2023 / Ubuntu: Recommended EC2 host operating systems.
-   - Nginx: High-performance reverse proxy for SSL termination and HTTP/2 routing.
-   - Let's Encrypt / AWS Certificate Manager (ACM): TLS/SSL certificate encryption.
-   - Bash Automation (`deploy-ec2.sh`): Production automated provisioning pipeline.
+3. AWS CloudTrail (API Audit & Management Telemetry Stream)
+   - Role in Project: Continuous audit stream capturing operational API calls (AssumeRole, PutBucketPolicy, etc.).
+   - SDK Client / Commands: CloudTrailClient (`DescribeTrailsCommand`, `LookupEventsCommand`).
+   - Implementation File: `src/lib/aws/cloudtrail.ts`.
+   - Live Status: Connected (Flag: AUTOSOC_ENABLE_CLOUDTRAIL=true).
+
+4. AWS Config (Configuration Drift & Compliance Rules Engine)
+   - Role in Project: Evaluates security group rules (e.g., restricted-ssh) and cloud compliance drift.
+   - SDK Client / Commands: ConfigServiceClient (`DescribeComplianceByConfigRuleCommand`, `GetComplianceDetailsByConfigRuleCommand`).
+   - Implementation File: `src/lib/aws/config.ts`.
+   - Live Status: Connected (Flag: AUTOSOC_ENABLE_CONFIG=true).
+
+5. Amazon Inspector v2 (Vulnerability & Package Scanner)
+   - Role in Project: Scans EC2 host packages and container workloads for CVE vulnerabilities.
+   - SDK Client / Commands: Inspector2Client (`ListCoverageCommand`, `ListFindingsCommand`).
+   - Implementation File: `src/lib/aws/inspector.ts`.
+   - Live Status: Connected (Flag: AUTOSOC_ENABLE_INSPECTOR=true).
+
+6. Amazon Bedrock & Groq Cloud AI (Generative AI Investigation Copilot)
+   - Role in Project: Autonomous incident triage, MITRE ATT&CK mapping, and remediation proposal.
+   - SDK Client / Commands: BedrockRuntimeClient (`InvokeModelCommand`) with Groq AI API endpoint fallback.
+   - Implementation File: `src/lib/aws/bedrock.ts`.
+   - Live Status: Connected (Flag: AUTOSOC_ENABLE_BEDROCK=true).
+
+7. AWS IAM — Identity & Access Management (Credential Governance & Risk Engine)
+   - Role in Project: Audits root access key usage, credential age, and wildcard admin policies; revokes exposed keys.
+   - SDK Client / Commands: IAMClient (`ListUsersCommand`, `ListAccessKeysCommand`, `GetAccountSummaryCommand`, `UpdateAccessKeyCommand`).
+   - Implementation File: `src/lib/aws/iam.ts`.
+   - Live Status: Connected.
+
+8. AWS STS — Security Token Service (Caller Identity & Session Verification)
+   - Role in Project: Validates server-side operator credentials and extracts live Account ID, User ARN, and Auth Method.
+   - SDK Client / Commands: STSClient (`GetCallerIdentityCommand`).
+   - Implementation File: `src/lib/aws/credentials.ts`.
+   - Live Status: Connected (Caller Identity: `941905484053`).
+
+9. Amazon EC2 — Elastic Compute Cloud (Compute Workloads & Network Quarantine)
+   - Role in Project: Target of simulated and gated containment; isolates compromised instances via dedicated security groups.
+   - SDK Client / Commands: EC2Client (`DescribeInstancesCommand`, `ModifyInstanceAttributeCommand`).
+   - Implementation File: `src/lib/playbooks/catalog.ts`.
+   - Live Status: Connected.
+
+10. Amazon S3 — Simple Storage Service (Audit Logs, Forensics & Bucket Defense)
+    - Role in Project: Stores tamper-evident forensic logs; continuously audited for Block Public Access (CIS 2.3).
+    - SDK Client / Commands: S3Client (`ListBucketsCommand`, `GetPublicAccessBlockCommand`, `PutBucketPublicAccessBlockCommand`).
+    - Implementation File: `src/lib/aws/s3.ts`.
+    - Live Status: Connected.
+
+11. AWS WAFv2 — Web Application Firewall (Perimeter Threat Mitigation)
+    - Role in Project: Dynamically blacklists adversary IP addresses at the perimeter within seconds.
+    - SDK Client / Commands: WAFV2Client (`GetIPSetCommand`, `UpdateIPSetCommand`).
+    - Implementation File: `src/lib/playbooks/catalog.ts`.
+    - Live Status: Connected.
+
+12. Amazon DynamoDB (NoSQL Security Datastore)
+    - Role in Project: Scalable, low-latency datastore persisting incident records, triage states, and operator notes.
+    - SDK Client: DynamoDBClient / DynamoDBDocumentClient.
+    - Configuration Target: Table `AutoSOC_Incidents`.
+    - Implementation File: `src/lib/aws/health.ts`.
+    - Live Status: Connected.
+
+13. AWS KMS — Key Management Service (Envelope Encryption & Audit Integrity)
+    - Role in Project: Provides Customer Managed Keys (CMK) for encrypting forensic audit records and telemetry stores.
+    - SDK Client: KMSClient.
+    - Configuration Target: Key ID `91b0112a-d7fd-4bc5-bfbf-05ea3d26f886`.
+    - Implementation File: `src/lib/aws/health.ts`.
+    - Live Status: Connected.
+
+14. Amazon EventBridge (Serverless Security Event Bus)
+    - Role in Project: Central routing bus capturing cloud events and routing alerts to AutoSOC webhooks.
+    - SDK Client: EventBridgeClient.
+    - Implementation File: `src/lib/aws/health.ts`.
+    - Live Status: Connected.
+
+15. AWS Lambda & Amazon Cognito (Serverless Hooks & Analyst Identity Boundary)
+    - Role in Project: Lambda executes asynchronous event hooks; Cognito provides RBAC user pools and analyst authentication.
+    - Implementation File: `src/lib/aws/health.ts`.
+    - Live Status: Connected.
+
+--------------------------------------------------------------------------------
+B. EXACT LIVE AWS CLOUD RESOURCES PROVISIONED (ACCOUNT: 941905484053)
+--------------------------------------------------------------------------------
+
+1. IAM Operator Identity & Policy:
+   - IAM User ARN: `arn:aws:iam::941905484053:user/autosoc-dev-operator`
+   - Active Access Key ID: `AKIA5WTPRDEKVNPQMDYX`
+   - Scoped IAM Operator Policy: `AutoSOC-Operator-Policy` (least-privilege read + gated remediation)
+   - Operational AWS Region: `ap-south-1` (Asia Pacific - Mumbai)
+
+2. Storage & Forensic Audit Buckets:
+   - Primary Immutable Audit Bucket: `autosoc-audit-941905484053` (Public Access Block enabled)
+   - Forensic Telemetry Bucket: `autosoc-lab-santanu-2026`
+   - AWS Config Delivery Bucket: `config-bucket-941905484053`
+
+3. Cryptographic Key & Database Resources:
+   - Dedicated AWS KMS CMK: `91b0112a-d7fd-4bc5-bfbf-05ea3d26f886`
+   - Operational DynamoDB Table: `AutoSOC_Incidents`
+
+4. Live Operational CloudTrail Trail:
+   - Trail Identifier: `IAM-Activity-Trail` (streaming management events in ap-south-1)
+
+5. Evaluated EC2 & Security Group Resources:
+   - Non-compliant Security Groups: `sg-0cd9835b61ad1df1a` and `sg-0feadfb5292083aab` (evaluated against AWS Config `restricted-ssh` rule)
+   - Quarantine Target EC2 Workload: `i-0a81f33b1e` (payments worker hypervisor)
+
+--------------------------------------------------------------------------------
+C. ARTIFICIAL INTELLIGENCE & LLM INFERENCE STACK
+--------------------------------------------------------------------------------
+
+1. Foundation Models Supported:
+   - Amazon Bedrock: Anthropic Claude 3 Sonnet (`anthropic.claude-3-sonnet-20240229-v1:0`)
+   - Groq Cloud AI: Ultra-low-latency `qwen/qwen3.8-27b` inference gateway
+
+2. Built-In AI Security Guardrails:
+   - Secret Redaction Engine (`sanitizeForAI`): Automatically strips AWS Access Key IDs (AKIA...), Secret Access Keys, Bearer tokens, and passwords from telemetry prompts before sending to LLM.
+   - Prompt-Injection Defense Layer (`defendAgainstPromptInjection`): Filters out untrusted delimiters, jailbreaks, and instructions embedded within finding descriptions.
+   - Deterministic Fallback Engine (`generateDeterministicSummary`): Provides 100% offline, zero-cost triage if LLM API limits are reached.
+
+--------------------------------------------------------------------------------
+D. SOFTWARE ENGINEERING & APPLICATION FRAMEWORK RESOURCES
+--------------------------------------------------------------------------------
+
+1. Core Frontend & Server Framework:
+   - Next.js 14.2 (App Router): React Server Components (RSC) + Server-side Route Handlers.
+   - React 18: Dynamic client interactivity.
+   - TypeScript 5 (Strict Mode): Strict interface definitions for all AWS telemetry objects.
+
+2. Styling & Design System:
+   - Tailwind CSS: Custom Cyber-Ops Swiss Brutalist dark mode theme.
+   - Palette Tokens: Charcoal base canvas (`#141613`, `#1B1E19`, `#0D0F0C`), Ivory typography (`#F3F0E7`), Chartreuse Lime focal accents (`#C7F36B`, `#D6FF85`), and Alert severity tokens.
+   - Lucide React: Standardized cybersecurity and operational iconography.
+
+3. Testing, DevOps & Containerization:
+   - Vitest & React Testing Library: 31 automated tests passing covering playbooks, approval barriers, audit immutability, and Config ingestion.
+   - Zod: Runtime environment variable schema validation (`src/lib/env.ts`).
+   - Docker & Docker Compose: Multi-stage production container build (deps -> builder -> runner) with unprivileged non-root user execution.
+   - Bash Deployment Script: Production host deployment automation (`deploy-ec2.sh`).
+
+--------------------------------------------------------------------------------
+E. TEAM MEMBER SERVICE & RESOURCE RESPONSIBILITY MATRIX
+--------------------------------------------------------------------------------
+
+| Team Member | Role | Primary AWS Services & Resources Managed |
+| :--- | :--- | :--- |
+| Member 1 | Cloud Security Architect & Full-Stack Lead | Next.js 14 App Router, AWS SDK v3 Engine, Zod Schemas, Correlation Store |
+| Member 2 | Defensive Network & Perimeter Security Engineer | Amazon EC2 (`i-0a81f33b1e`), Security Groups (`sg-0cd...`), AWS WAFv2 Dynamic IPSets |
+| Member 3 | Frontend & Application Tier Engineer | SOC Command Center UI, Incident Workbenches, NextAuth Session Governance |
+| Member 4 | Cloud Storage & Forensic Database Engineer | Amazon S3 (`autosoc-audit-941905484053`), DynamoDB (`AutoSOC_Incidents`), AWS KMS CMK |
+| Member 5 | IAM & Cloud DevOps Engineer | AWS IAM (`autosoc-dev-operator`), STS Identity, Docker, EC2 Deploy Automation |
+| Member 6 | AI Intelligence & Reliability Testing Engineer | Amazon Bedrock / Groq AI, CloudTrail (`IAM-Activity-Trail`), AWS Config, 31 Vitest Tests |
 
 ================================================================================
 6. ENVIRONMENT CONFIGURATION CONSOLIDATION (.ENV)
@@ -455,7 +588,7 @@ AWS Components: Amazon Bedrock / Groq Cloud LLM, AWS CloudTrail, AWS Config Rule
    - Authored the comprehensive 31-test automated unit and integration testing suite.
 
 2. What They Created:
-   - AI Investigation Engine (`src/lib/ai/bedrock.ts`) performing automated root-cause analysis, MITRE ATT&CK technique mapping, and remediation planning with regex-based prompt-injection filters.
+   - AI Investigation Engine (`src/lib/aws/bedrock.ts`) performing automated root-cause analysis, MITRE ATT&CK technique mapping, and remediation planning with regex-based prompt-injection filters.
    - CloudTrail Forensic Ingestion (`src/lib/aws/cloudtrail.ts`) querying management events via `cloudtrail:LookupEvents`.
    - Compliance Framework Engine (`src/lib/aws/compliance.ts` and `src/lib/aws/config.ts`) mapping controls to CIS AWS Foundations Benchmark v3.0, NIST CSF 2.0, and ISO/IEC 27001.
    - 31 automated Vitest tests (`src/test/security.test.ts`, `src/test/config-integration.test.ts`, `src/test/integration-workflow.test.ts`) validating safety gates, approval barriers, and audit integrity.
