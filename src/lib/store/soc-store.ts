@@ -283,7 +283,7 @@ export function resolveIncidentByRemediation(
     incident.responseState = {
       dryRunExecuted: true,
       approvalGranted: true,
-      executionStatus: "SUCCESS",
+      executionStatus: "COMPLETED",
     };
     incident.timeline.push({
       id: `tl-remed-${Date.now()}`,
@@ -292,7 +292,7 @@ export function resolveIncidentByRemediation(
       description: `Playbook '${playbookId}' executed on target '${targetResource}' by analyst '${actor}'. Threat contained.`,
       actor,
       source: "AutoSOC-RemediationEngine",
-      type: "ACTION",
+      type: "EXECUTION",
     });
 
     const memoryFindingsList = globalStore._autoSocMemoryFindings || [];

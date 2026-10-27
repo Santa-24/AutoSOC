@@ -31,14 +31,30 @@ elif command -v apt-get &> /dev/null; then
     sudo usermod -aG docker "$USER" 2>/dev/null || true
 fi
 
-# 2. Check for .env Configuration
+# 2. Optimize Build Performance (Enable 2GB Swap on <4GB RAM Instances)
+if [ -f /proc/meminfo ]; then
+    TOTAL_MEM=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 4096)
+    SWAP_TOTAL=$(awk '/SwapTotal/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 0)
+    if [ "$SWAP_TOTAL" -eq 0 ] && [ "$TOTAL_MEM" -lt 4096 ]; then
+        echo "[+] Low memory instance detected (${TOTAL_MEM}MB RAM). Creating 2GB swap space to accelerate Next.js build..."
+        sudo dd if=/dev/zero of=/swapfile bs=128M count=16 status=none 2>/dev/null || true
+        if [ -f /swapfile ]; then
+            sudo chmod 600 /swapfile
+            sudo mkswap /swapfile >/dev/null 2>&1 || true
+            sudo swapon /swapfile >/dev/null 2>&1 || true
+            echo "[+] 2GB swap activated."
+        fi
+    fi
+fi
+
+# 3. Check for .env Configuration
 if [ ! -f .env ]; then
     echo "[!] No .env file found. Initializing .env from .env.example..."
     cp .env.example .env
     echo "[*] AutoSOC will authenticate via EC2 IAM Instance Profile by default."
 fi
 
-# 3. Build & Launch Container via Docker Compose
+# 4. Build & Launch Container via Docker Compose
 echo "[+] Building and starting AutoSOC container..."
 if docker compose version &> /dev/null; then
     sudo docker compose down || true
@@ -60,7 +76,7 @@ else
       autosoc:latest
 fi
 
-# 4. Wait for Container Health Check
+# 5. Wait for Container Health Check
 echo "[+] Waiting for AutoSOC server to boot..."
 sleep 5
 

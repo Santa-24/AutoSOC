@@ -144,6 +144,7 @@ export default function InvestigationsPage() {
         }
       })
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleRunInvestigation = async (e: React.FormEvent) => {

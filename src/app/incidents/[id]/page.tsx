@@ -206,7 +206,7 @@ export default function IncidentDetailPage() {
                 updatedAt: new Date().toISOString(),
                 responseState: {
                   ...prev.responseState,
-                  executionStatus: "SUCCESS",
+                  executionStatus: "COMPLETED",
                   approvalGranted: true,
                   dryRunExecuted: true,
                 },
@@ -218,7 +218,7 @@ export default function IncidentDetailPage() {
                     title: `Remediation Playbook Executed: ${selectedPlaybook}`,
                     description: action.resultSummary || "Incident successfully contained.",
                     source: "AutoSOC-RemediationEngine",
-                    type: "ACTION",
+                    type: "EXECUTION",
                   },
                 ],
               }
