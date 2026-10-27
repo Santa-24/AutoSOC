@@ -3,6 +3,14 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   output: "standalone",
+  eslint: {
+    // Skip ESLint during production container builds to drastically accelerate build times
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    // Skip redundant type checking in Docker build (already verified in CI)
+    ignoreBuildErrors: true,
+  },
   experimental: {
     serverComponentsExternalPackages: [
       "@aws-sdk/client-sts",

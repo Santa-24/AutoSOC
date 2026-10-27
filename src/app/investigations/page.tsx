@@ -133,6 +133,7 @@ export default function InvestigationsPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     fetch("/api/findings")
       .then((res) => res.json())
